@@ -84,26 +84,30 @@ public class LogImportService {
             }
         }
 
-        // Heuristics for other formats (nginx combined, Postgres, etc.)
+        // Heuristics for other formats (Postgres, nginx access logs, etc.)
         if (level == null || level.isBlank() || "INFO".equals(level)) {
-            // Postgres: look for tokens like ERROR, FATAL, WARNING, LOG, DEBUG, INFO
-            java.util.regex.Matcher lvlTok = java.util.regex.Pattern.compile("\\b(ERROR|FATAL|WARNING|WARN|LOG|DEBUG|INFO|TRACE)\\b", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(line);
-            if (lvlTok.find()) {
-                String tok = lvlTok.group(1).toUpperCase();
-                level = tok.equals("WARNING") ? "WARN" : tok;
+            // Postgres severity tokens followed by ':'
+            java.util.regex.Matcher pg = java.util.regex.Pattern.compile(
+                    "\\b(ERROR|FATAL|PANIC|WARNING|WARN|NOTICE|INFO|LOG|DEBUG\\d?|STATEMENT|DETAIL|HINT|CONTEXT)\\s*:",
+                    java.util.regex.Pattern.CASE_INSENSITIVE).matcher(line);
+            if (pg.find()) {
+                String tok = pg.group(1).toUpperCase();
+                if (tok.startsWith("DEBUG")) tok = "DEBUG";
+                if (tok.equals("WARNING")) tok = "WARN";
+                // Map less-useful tokens to LOG to keep filter sane
+                if (tok.equals("STATEMENT") || tok.equals("DETAIL") || tok.equals("HINT") || tok.equals("CONTEXT")) {
+                    tok = "LOG";
+                }
+                level = tok;
             }
         }
         if (level == null || level.isBlank() || "INFO".equals(level)) {
-            // nginx combined log: capture HTTP status code (3 digits) after the quoted request
-            java.util.regex.Matcher mng = java.util.regex.Pattern.compile("\"\\S+\\s+\\S+\\s+\\S+\"\\s+(?<status>\\d{3})\\b").matcher(line);
+            // nginx combined/common: method path HTTP/x.x" <status>
+            java.util.regex.Matcher mng = java.util.regex.Pattern.compile(
+                    "\"(GET|POST|PUT|DELETE|HEAD|PATCH|OPTIONS)\\s+[^\\"\\s]+\\s+HTTP/\\d\\.\\d\"\\s+(?<status>\\d{3})\\b",
+                    java.util.regex.Pattern.CASE_INSENSITIVE).matcher(line);
             if (mng.find()) {
                 level = mng.group("status");
-            } else {
-                // Fallback: first standalone 3-digit number (100-599)
-                java.util.regex.Matcher any3 = java.util.regex.Pattern.compile("\\b([1-5]\\d{2})\\b").matcher(line);
-                if (any3.find()) {
-                    level = any3.group(1);
-                }
             }
         }
         }
