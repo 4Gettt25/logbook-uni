@@ -2,8 +2,8 @@ package com.example.logbook.web;
 
 import com.example.logbook.domain.LogEntry;
 import com.example.logbook.domain.LogLevel;
-import com.example.logbook.domain.LogStatus;
 import com.example.logbook.service.LogEntryService;
+import com.example.logbook.repository.LogEntryRepository;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,9 +25,11 @@ import java.util.stream.Collectors;
 public class LogEntryController {
 
     private final LogEntryService service;
+    private final LogEntryRepository repository;
 
-    public LogEntryController(LogEntryService service) {
+    public LogEntryController(LogEntryService service, LogEntryRepository repository) {
         this.service = service;
+        this.repository = repository;
     }
 
     @GetMapping
@@ -37,13 +39,11 @@ public class LogEntryController {
             @RequestParam(required = false) LogLevel level,
             @RequestParam(required = false) String source,
             @RequestParam(required = false, name = "q") String query,
-            @RequestParam(required = false) LogStatus status,
-            @RequestParam(required = false) String username,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "timestamp"));
-        return service.search(from, to, level, source, query, status, username, pageable);
+        return service.search(from, to, level, source, query, pageable);
     }
 
     @GetMapping("/{id}")
@@ -73,20 +73,18 @@ public class LogEntryController {
             @RequestParam(required = false) LogLevel level,
             @RequestParam(required = false) String source,
             @RequestParam(required = false, name = "q") String query,
-            @RequestParam(required = false) LogStatus status,
-            @RequestParam(required = false) String username,
             @RequestParam(defaultValue = "csv") String format,
             @RequestParam(defaultValue = "1000") int limit
     ) {
         // Export first N items using same filter, unsliced by page
-        Page<LogEntry> page = service.search(from, to, level, source, query, status, username, PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "timestamp")));
+        Page<LogEntry> page = service.search(from, to, level, source, query, PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "timestamp")));
         List<LogEntry> items = page.getContent();
 
         if ("json".equalsIgnoreCase(format)) {
             String json = items.stream()
-                    .map(e -> String.format("{\"id\":%d,\"timestamp\":\"%s\",\"logLevel\":\"%s\",\"source\":\"%s\",\"message\":\"%s\",\"username\":\"%s\",\"category\":\"%s\",\"status\":\"%s\"}",
+                    .map(e -> String.format("{\"id\":%d,\"timestamp\":\"%s\",\"logLevel\":\"%s\",\"source\":\"%s\",\"message\":\"%s\",\"category\":\"%s\"}",
                             e.getId(), e.getTimestamp(), e.getLogLevel(), escape(e.getSource()), escape(e.getMessage()),
-                            escape(nz(e.getUsername())), escape(nz(e.getCategory())), e.getStatus()))
+                            escape(nz(e.getCategory()))))
                     .collect(Collectors.joining(",","[", "]"));
             byte[] body = json.getBytes(StandardCharsets.UTF_8);
             return ResponseEntity.ok()
@@ -96,7 +94,7 @@ public class LogEntryController {
         }
 
         // default CSV
-        String header = "id,timestamp,level,source,message,username,category,status\n";
+        String header = "id,timestamp,level,source,message,category\n";
         String csv = items.stream()
                 .map(e -> String.join(",",
                         String.valueOf(e.getId()),
@@ -104,15 +102,18 @@ public class LogEntryController {
                         safe(e.getLogLevel()),
                         csvField(e.getSource()),
                         csvField(e.getMessage()),
-                        csvField(e.getUsername()),
-                        csvField(e.getCategory()),
-                        safe(e.getStatus())))
+                        csvField(e.getCategory())))
                 .collect(Collectors.joining("\n", header, "\n"));
         byte[] body = csv.getBytes(StandardCharsets.UTF_8);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=logs.csv")
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .body(body);
+    }
+
+    @GetMapping("/levels")
+    public List<LogLevel> availableLevels() {
+        return repository.findDistinctLevels();
     }
 
     private static String escape(String in) {
@@ -129,4 +130,3 @@ public class LogEntryController {
         return s;
     }
 }
-

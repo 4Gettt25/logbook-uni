@@ -13,10 +13,6 @@ function formatLogLevel(level) {
     return `<span class="badge log-level-${level}">${level}</span>`;
 }
 
-function formatStatus(status) {
-    return `<span class="badge status-${status}">${status.replace('_', ' ')}</span>`;
-}
-
 function showToast(message, type = 'success') {
     const toastContainer = document.getElementById('toastContainer') || createToastContainer();
     

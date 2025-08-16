@@ -2,7 +2,6 @@ package com.example.logbook.service;
 
 import com.example.logbook.domain.LogEntry;
 import com.example.logbook.domain.LogLevel;
-import com.example.logbook.domain.LogStatus;
 import com.example.logbook.repository.LogEntryRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,17 +27,13 @@ public class LogEntryService {
                                  LogLevel level,
                                  String source,
                                  String query,
-                                 LogStatus status,
-                                 String username,
                                  Pageable pageable) {
         Specification<LogEntry> spec = Specification
                 .where(LogEntrySpecifications.timestampFrom(from))
                 .and(LogEntrySpecifications.timestampTo(to))
                 .and(LogEntrySpecifications.level(level))
                 .and(LogEntrySpecifications.source(source))
-                .and(LogEntrySpecifications.message(query))
-                .and(LogEntrySpecifications.status(status))
-                .and(LogEntrySpecifications.username(username));
+                .and(LogEntrySpecifications.message(query));
         return repository.findAll(spec, pageable);
     }
 
@@ -48,8 +43,6 @@ public class LogEntryService {
                                          LogLevel level,
                                          String source,
                                          String query,
-                                         LogStatus status,
-                                         String username,
                                          Pageable pageable) {
         Specification<LogEntry> spec = Specification
                 .where(LogEntrySpecifications.serverId(serverId))
@@ -57,9 +50,7 @@ public class LogEntryService {
                 .and(LogEntrySpecifications.timestampTo(to))
                 .and(LogEntrySpecifications.level(level))
                 .and(LogEntrySpecifications.source(source))
-                .and(LogEntrySpecifications.message(query))
-                .and(LogEntrySpecifications.status(status))
-                .and(LogEntrySpecifications.username(username));
+                .and(LogEntrySpecifications.message(query));
         return repository.findAll(spec, pageable);
     }
 
@@ -80,9 +71,7 @@ public class LogEntryService {
         existing.setLogLevel(updated.getLogLevel() != null ? updated.getLogLevel() : existing.getLogLevel());
         existing.setSource(updated.getSource() != null ? updated.getSource() : existing.getSource());
         existing.setMessage(updated.getMessage() != null ? updated.getMessage() : existing.getMessage());
-        existing.setUsername(updated.getUsername());
         existing.setCategory(updated.getCategory());
-        existing.setStatus(updated.getStatus() != null ? updated.getStatus() : existing.getStatus());
         return repository.save(existing);
     }
 

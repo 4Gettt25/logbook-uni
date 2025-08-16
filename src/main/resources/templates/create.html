@@ -59,7 +59,7 @@
                     <div class="card-body">
                         <form id="createForm">
                             <div class="row mb-3">
-                                <div class="col-md-6">
+                                <div class="col-md-12">
                                     <label for="logLevel" class="form-label">Log Level <span class="text-danger">*</span></label>
                                     <select id="logLevel" class="form-select" required>
                                         <option value="">Select log level</option>
@@ -71,16 +71,6 @@
                                         <option value="FATAL">FATAL</option>
                                     </select>
                                     <div class="invalid-feedback">Please select a log level.</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
-                                    <select id="status" class="form-select" required>
-                                        <option value="OPEN" selected>OPEN</option>
-                                        <option value="IN_PROGRESS">IN_PROGRESS</option>
-                                        <option value="RESOLVED">RESOLVED</option>
-                                        <option value="IGNORED">IGNORED</option>
-                                    </select>
-                                    <div class="invalid-feedback">Please select a status.</div>
                                 </div>
                             </div>
 
@@ -101,12 +91,6 @@
                             </div>
 
                             <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="username" class="form-label">Username</label>
-                                    <input type="text" id="username" class="form-control" 
-                                           placeholder="Associated username (optional)">
-                                    <div class="form-text">User associated with this log entry</div>
-                                </div>
                                 <div class="col-md-6">
                                     <label for="category" class="form-label">Category</label>
                                     <input type="text" id="category" class="form-control" 

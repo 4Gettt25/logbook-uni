@@ -2,7 +2,6 @@ package com.example.logbook;
 
 import com.example.logbook.domain.LogEntry;
 import com.example.logbook.domain.LogLevel;
-import com.example.logbook.domain.LogStatus;
 import com.example.logbook.repository.LogEntryRepository;
 import com.example.logbook.service.LogEntrySpecifications;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,7 @@ class LogEntryRepositoryTests {
         e1.setLogLevel(LogLevel.INFO);
         e1.setSource("auth");
         e1.setMessage("User logged in");
-        e1.setStatus(LogStatus.OPEN);
+        
         repository.save(e1);
 
         LogEntry e2 = new LogEntry();
@@ -36,7 +35,7 @@ class LogEntryRepositoryTests {
         e2.setLogLevel(LogLevel.ERROR);
         e2.setSource("api");
         e2.setMessage("Unhandled exception");
-        e2.setStatus(LogStatus.OPEN);
+        
         repository.save(e2);
 
         Specification<LogEntry> spec = Specification
@@ -47,4 +46,3 @@ class LogEntryRepositoryTests {
         assertThat(results.get(0).getMessage()).contains("Unhandled");
     }
 }
-

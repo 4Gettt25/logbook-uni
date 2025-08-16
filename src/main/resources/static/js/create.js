@@ -85,12 +85,10 @@ async function createLogEntry() {
         
         const timestamp = document.getElementById('timestamp').value;
         
-        const logData = {
+    const logData = {
             logLevel: document.getElementById('logLevel').value,
-            status: document.getElementById('status').value,
             source: document.getElementById('source').value.trim(),
             message: document.getElementById('message').value.trim(),
-            username: document.getElementById('username').value.trim() || null,
             category: document.getElementById('category').value.trim() || null,
             timestamp: timestamp ? new Date(timestamp).toISOString() : new Date().toISOString()
         };
@@ -133,7 +131,6 @@ function resetForm() {
     
     // Set defaults
     document.getElementById('logLevel').value = 'INFO';
-    document.getElementById('status').value = 'OPEN';
     setCurrentTimestamp();
 }
 
@@ -149,21 +146,18 @@ function loadTemplate(type) {
     const templates = {
         error: {
             logLevel: 'ERROR',
-            status: 'OPEN',
             source: 'com.example.service.UserService',
             message: 'Failed to process user request: Database connection timeout',
             category: 'database'
         },
         warning: {
             logLevel: 'WARN',
-            status: 'OPEN',
             source: 'com.example.controller.AuthController',
             message: 'User authentication attempt with invalid credentials',
             category: 'security'
         },
         info: {
             logLevel: 'INFO',
-            status: 'RESOLVED',
             source: 'com.example.service.EmailService',
             message: 'Email notification sent successfully to user',
             category: 'notification'
@@ -173,7 +167,6 @@ function loadTemplate(type) {
     const template = templates[type];
     if (template) {
         document.getElementById('logLevel').value = template.logLevel;
-        document.getElementById('status').value = template.status;
         document.getElementById('source').value = template.source;
         document.getElementById('message').value = template.message;
         document.getElementById('category').value = template.category;

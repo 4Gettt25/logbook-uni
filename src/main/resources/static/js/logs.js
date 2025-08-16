@@ -22,7 +22,8 @@ async function loadServers() {
             option.textContent = `${server.name}${server.hostname ? ' (' + server.hostname + ')' : ''}`;
             select.appendChild(option);
         });
-        
+        // Load available levels for initial selection
+        await loadAvailableLevels(select.value || null);
     } catch (error) {
         console.error('Failed to load servers:', error);
     }
@@ -39,13 +40,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Set up enter key on search inputs
-    const searchInputs = ['sourceFilter', 'usernameFilter', 'searchQuery'];
+    const searchInputs = ['sourceFilter', 'searchQuery'];
     searchInputs.forEach(inputId => {
         document.getElementById(inputId).addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 applyFilters();
             }
         });
+    });
+    
+    // Update levels when server selection changes
+    document.getElementById('serverFilter').addEventListener('change', async function() {
+        await loadAvailableLevels(this.value || null);
+        applyFilters();
     });
     
     // Check if server is pre-selected from URL
@@ -78,7 +85,14 @@ async function loadLogs(page = 0, filters = {}) {
             params.to = new Date(params.to).toISOString();
         }
         
-        const response = await fetchLogs(params);
+        let response;
+        if (params.serverId) {
+            const { serverId, ...rest } = params;
+            const qs = new URLSearchParams(rest).toString();
+            response = await apiRequest(`/api/servers/${serverId}/logs${qs ? '?' + qs : ''}`);
+        } else {
+            response = await fetchLogs(params);
+        }
         const logs = response.content || [];
         
         hideLoading(container);
@@ -133,7 +147,6 @@ function renderLogs(logs) {
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div class="d-flex gap-2 align-items-center">
                     ${formatLogLevel(log.logLevel)}
-                    ${formatStatus(log.status)}
                     <span class="log-timestamp">
                         <i class="fas fa-clock"></i> ${formatDate(log.timestamp)}
                     </span>
@@ -166,13 +179,6 @@ function renderLogs(logs) {
             </div>
             
             <div class="row">
-                ${log.username ? `
-                    <div class="col-md-6">
-                        <small class="text-muted">
-                            <i class="fas fa-user"></i> <strong>User:</strong> ${escapeHtml(log.username)}
-                        </small>
-                    </div>
-                ` : ''}
                 ${log.category ? `
                     <div class="col-md-6">
                         <small class="text-muted">
@@ -277,9 +283,7 @@ function applyFilters() {
     const filters = {
         serverId: document.getElementById('serverFilter').value,
         level: document.getElementById('levelFilter').value,
-        status: document.getElementById('statusFilter').value,
         source: document.getElementById('sourceFilter').value,
-        username: document.getElementById('usernameFilter').value,
         from: document.getElementById('fromDate').value,
         to: document.getElementById('toDate').value,
         q: document.getElementById('searchQuery').value
@@ -317,10 +321,8 @@ function editLog(id) {
             if (log) {
                 document.getElementById('editId').value = log.id;
                 document.getElementById('editLevel').value = log.logLevel;
-                document.getElementById('editStatus').value = log.status;
                 document.getElementById('editSource').value = log.source;
                 document.getElementById('editMessage').value = log.message;
-                document.getElementById('editUsername').value = log.username || '';
                 document.getElementById('editCategory').value = log.category || '';
 
                 const modal = new bootstrap.Modal(document.getElementById('editModal'));
@@ -338,10 +340,8 @@ async function saveLogEntry() {
         const id = document.getElementById('editId').value;
         const logData = {
             logLevel: document.getElementById('editLevel').value,
-            status: document.getElementById('editStatus').value,
             source: document.getElementById('editSource').value,
             message: document.getElementById('editMessage').value,
-            username: document.getElementById('editUsername').value || null,
             category: document.getElementById('editCategory').value || null,
             timestamp: new Date().toISOString() // Keep current timestamp for updates
         };
@@ -386,4 +386,30 @@ function escapeHtml(text) {
         "'": '&#039;'
     };
     return text ? text.replace(/[&<>"']/g, function(m) { return map[m]; }) : '';
+}
+
+async function loadAvailableLevels(serverId) {
+    try {
+        const select = document.getElementById('levelFilter');
+        const current = select.value;
+        select.innerHTML = '<option value="">All Levels</option>';
+        let levels;
+        if (serverId) {
+            levels = await apiRequest(`/api/servers/${serverId}/log-levels`);
+        } else {
+            levels = await apiRequest(`/api/logs/levels`);
+        }
+        (levels || []).forEach(level => {
+            const opt = document.createElement('option');
+            opt.value = level;
+            opt.textContent = level;
+            select.appendChild(opt);
+        });
+        // Restore selection if still present
+        if ([...select.options].some(o => o.value === current)) {
+            select.value = current;
+        }
+    } catch (e) {
+        console.error('Failed to load levels', e);
+    }
 }

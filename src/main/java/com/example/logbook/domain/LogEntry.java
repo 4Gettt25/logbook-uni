@@ -37,14 +37,7 @@ public class LogEntry {
     private String message;
 
     @Size(max = 255)
-    private String username;
-
-    @Size(max = 255)
     private String category;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private LogStatus status = LogStatus.OPEN;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "server_id")
@@ -91,28 +84,12 @@ public class LogEntry {
         this.message = message;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getCategory() {
         return category;
     }
 
     public void setCategory(String category) {
         this.category = category;
-    }
-
-    public LogStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(LogStatus status) {
-        this.status = status;
     }
 
     public Server getServer() {

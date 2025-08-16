@@ -2,7 +2,6 @@ package com.example.logbook.service;
 
 import com.example.logbook.domain.LogEntry;
 import com.example.logbook.domain.LogLevel;
-import com.example.logbook.domain.LogStatus;
 import com.example.logbook.domain.Server;
 import com.example.logbook.repository.LogEntryRepository;
 import org.springframework.stereotype.Service;
@@ -95,7 +94,6 @@ public class LogImportService {
         e.setLogLevel(level);
         e.setSource(source);
         e.setMessage(msg);
-        e.setStatus(LogStatus.OPEN);
         e.setServer(server);
         return e;
     }

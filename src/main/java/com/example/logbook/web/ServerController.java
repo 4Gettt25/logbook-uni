@@ -2,7 +2,6 @@ package com.example.logbook.web;
 
 import com.example.logbook.domain.LogEntry;
 import com.example.logbook.domain.LogLevel;
-import com.example.logbook.domain.LogStatus;
 import com.example.logbook.domain.Server;
 import com.example.logbook.repository.ServerRepository;
 import com.example.logbook.service.LogEntryService;
@@ -76,14 +75,19 @@ public class ServerController {
                                @RequestParam(required = false) LogLevel level,
                                @RequestParam(required = false) String source,
                                @RequestParam(required = false, name = "q") String query,
-                               @RequestParam(required = false) LogStatus status,
-                               @RequestParam(required = false) String username,
                                @RequestParam(defaultValue = "0") int page,
                                @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "timestamp"));
         // ensure server exists
         servers.findById(id).orElseThrow(() -> new NoSuchElementException("Server not found: " + id));
-        return logService.searchByServer(id, from, to, level, source, query, status, username, pageable);
+        return logService.searchByServer(id, from, to, level, source, query, pageable);
+    }
+
+    @GetMapping("/{id}/log-levels")
+    public java.util.List<LogLevel> availableLevels(@PathVariable long id) {
+        // ensure server exists
+        servers.findById(id).orElseThrow(() -> new NoSuchElementException("Server not found: " + id));
+        return logEntries.findDistinctLevelsByServerId(id);
     }
 
     @PostMapping(path = "/{id}/logs/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

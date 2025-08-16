@@ -1,11 +1,11 @@
 -------------------------------------------------------------------------------
 Test set: com.example.logbook.ServerLogRelationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 2.078 s <<< FAILURE! -- in com.example.logbook.ServerLogRelationTests
-com.example.logbook.ServerLogRelationTests.associatesLogsToServerAndFilters -- Time elapsed: 0.065 s <<< ERROR!
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.014 s <<< FAILURE! -- in com.example.logbook.ServerLogRelationTests
+com.example.logbook.ServerLogRelationTests.associatesLogsToServerAndFilters -- Time elapsed: 0.004 s <<< ERROR!
 java.lang.IllegalStateException: Could not initialize plugin: interface org.mockito.plugins.MockMaker (alternate: null)
 	at org.mockito.internal.configuration.plugins.PluginLoader$1.invoke(PluginLoader.java:85)
-	at jdk.proxy2/jdk.proxy2.$Proxy130.getHandler(Unknown Source)
+	at jdk.proxy2/jdk.proxy2.$Proxy135.getHandler(Unknown Source)
 	at org.mockito.internal.util.MockUtil.getMockHandlerOrNull(MockUtil.java:158)
 	at org.mockito.internal.util.MockUtil.isMock(MockUtil.java:147)
 	at org.mockito.internal.util.DefaultMockingDetails.isMock(DefaultMockingDetails.java:32)
@@ -19,7 +19,7 @@ java.lang.IllegalStateException: Could not initialize plugin: interface org.mock
 	at java.base/java.util.ArrayList.forEach(Unknown Source)
 	Suppressed: java.lang.IllegalStateException: Could not initialize plugin: interface org.mockito.plugins.MockMaker (alternate: null)
 		at org.mockito.internal.configuration.plugins.PluginLoader$1.invoke(PluginLoader.java:85)
-		at jdk.proxy2/jdk.proxy2.$Proxy130.getHandler(Unknown Source)
+		at jdk.proxy2/jdk.proxy2.$Proxy135.getHandler(Unknown Source)
 		at org.mockito.internal.util.MockUtil.getMockHandlerOrNull(MockUtil.java:158)
 		at org.mockito.internal.util.MockUtil.isMock(MockUtil.java:147)
 		at org.mockito.internal.util.DefaultMockingDetails.isMock(DefaultMockingDetails.java:32)

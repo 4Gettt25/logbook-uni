@@ -2,8 +2,8 @@ package com.example.logbook.web;
 
 import com.example.logbook.domain.LogEntry;
 import com.example.logbook.domain.LogLevel;
-import com.example.logbook.domain.LogStatus;
 import com.example.logbook.service.LogEntryService;
+import com.example.logbook.repository.LogEntryRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +33,9 @@ class LogEntryControllerTests {
     @MockBean
     LogEntryService service;
 
+    @MockBean
+    LogEntryRepository repository;
+
     @Test
     void listsLogsWithFilters() throws Exception {
         LogEntry e = new LogEntry();
@@ -41,9 +44,9 @@ class LogEntryControllerTests {
         e.setLogLevel(LogLevel.INFO);
         e.setSource("auth");
         e.setMessage("ok");
-        e.setStatus(LogStatus.OPEN);
+        
 
-        Mockito.when(service.search(any(), any(), any(), any(), any(), any(), any(), any()))
+        Mockito.when(service.search(any(), any(), any(), any(), any(), any()))
                 .thenAnswer(inv -> new PageImpl<>(List.of(e), PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "timestamp")), 1));
 
         mvc.perform(get("/api/logs")
@@ -78,7 +81,7 @@ class LogEntryControllerTests {
         created.setLogLevel(LogLevel.ERROR);
         created.setSource("api");
         created.setMessage("boom");
-        created.setStatus(LogStatus.OPEN);
+        
 
         Mockito.when(service.create(any(LogEntry.class))).thenReturn(created);
 
@@ -96,4 +99,3 @@ class LogEntryControllerTests {
                 .andExpect(content().string(containsString("\"id\":10")));
     }
 }
-

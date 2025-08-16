@@ -76,22 +76,6 @@
                             <label for="levelFilter" class="form-label">Log Level</label>
                             <select id="levelFilter" class="form-select">
                                 <option value="">All Levels</option>
-                                <option value="TRACE">TRACE</option>
-                                <option value="DEBUG">DEBUG</option>
-                                <option value="INFO">INFO</option>
-                                <option value="WARN">WARN</option>
-                                <option value="ERROR">ERROR</option>
-                                <option value="FATAL">FATAL</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="statusFilter" class="form-label">Status</label>
-                            <select id="statusFilter" class="form-select">
-                                <option value="">All Statuses</option>
-                                <option value="OPEN">OPEN</option>
-                                <option value="IN_PROGRESS">IN_PROGRESS</option>
-                                <option value="RESOLVED">RESOLVED</option>
-                                <option value="IGNORED">IGNORED</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -100,10 +84,7 @@
                         </div>
                     </div>
                     <div class="row mt-3">
-                        <div class="col-md-3">
-                            <label for="usernameFilter" class="form-label">Username</label>
-                            <input type="text" id="usernameFilter" class="form-control" placeholder="Filter by username">
-                        </div>
+                        
                         <div class="col-md-3">
                             <label for="fromDate" class="form-label">From Date</label>
                             <input type="datetime-local" id="fromDate" class="form-control">
@@ -170,7 +151,7 @@
                     <form id="editForm">
                         <input type="hidden" id="editId">
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label for="editLevel" class="form-label">Log Level</label>
                                 <select id="editLevel" class="form-select" required>
                                     <option value="TRACE">TRACE</option>
@@ -179,15 +160,6 @@
                                     <option value="WARN">WARN</option>
                                     <option value="ERROR">ERROR</option>
                                     <option value="FATAL">FATAL</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="editStatus" class="form-label">Status</label>
-                                <select id="editStatus" class="form-select" required>
-                                    <option value="OPEN">OPEN</option>
-                                    <option value="IN_PROGRESS">IN_PROGRESS</option>
-                                    <option value="RESOLVED">RESOLVED</option>
-                                    <option value="IGNORED">IGNORED</option>
                                 </select>
                             </div>
                         </div>
@@ -200,10 +172,6 @@
                             <textarea id="editMessage" class="form-control" rows="4" required></textarea>
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <label for="editUsername" class="form-label">Username</label>
-                                <input type="text" id="editUsername" class="form-control">
-                            </div>
                             <div class="col-md-6">
                                 <label for="editCategory" class="form-label">Category</label>
                                 <input type="text" id="editCategory" class="form-control">

@@ -2,7 +2,6 @@ package com.example.logbook.service;
 
 import com.example.logbook.domain.LogEntry;
 import com.example.logbook.domain.LogLevel;
-import com.example.logbook.domain.LogStatus;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.Instant;
@@ -30,13 +29,7 @@ public final class LogEntrySpecifications {
         return (root, query, cb) -> (q == null || q.isBlank()) ? null : cb.like(cb.lower(root.get("message")), like(q));
     }
 
-    public static Specification<LogEntry> status(LogStatus status) {
-        return (root, query, cb) -> status == null ? null : cb.equal(root.get("status"), status);
-    }
-
-    public static Specification<LogEntry> username(String username) {
-        return (root, query, cb) -> (username == null || username.isBlank()) ? null : cb.like(cb.lower(root.get("username")), like(username));
-    }
+    // status and username have been removed
 
     public static Specification<LogEntry> serverId(Long serverId) {
         return (root, query, cb) -> serverId == null ? null : cb.equal(root.get("server").get("id"), serverId);

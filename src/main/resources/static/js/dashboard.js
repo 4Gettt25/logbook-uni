@@ -20,15 +20,12 @@ async function loadDashboardData() {
         const errorLogs = allLogs.content?.filter(log => 
             log.logLevel === 'ERROR' || log.logLevel === 'FATAL'
         ).length || 0;
-        const resolvedIssues = allLogs.content?.filter(log => 
-            log.status === 'RESOLVED'
-        ).length || 0;
         
         // Update dashboard cards
         document.getElementById('totalLogs').textContent = totalLogs;
         document.getElementById('totalServers').textContent = totalServers;
         document.getElementById('errorLogs').textContent = errorLogs;
-        document.getElementById('resolvedIssues').textContent = resolvedIssues;
+        // Resolved card removed; no status tracking
         
         // Update chart data
         updateLogLevelChart(allLogs.content || []);
@@ -74,10 +71,6 @@ async function loadRecentLogs() {
                             <i class="fas fa-clock"></i> ${formatDate(log.timestamp)}
                         </small>
                     </div>
-                    ${log.username ? `<small class="text-muted"><i class="fas fa-user"></i> ${escapeHtml(log.username)}</small>` : ''}
-                </div>
-                <div class="ms-2">
-                    ${formatStatus(log.status)}
                 </div>
             </div>
         `).join('');
