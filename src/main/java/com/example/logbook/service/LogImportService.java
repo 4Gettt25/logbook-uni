@@ -1,7 +1,6 @@
 package com.example.logbook.service;
 
 import com.example.logbook.domain.LogEntry;
-import com.example.logbook.domain.LogLevel;
 import com.example.logbook.domain.Server;
 import com.example.logbook.repository.LogEntryRepository;
 import org.springframework.stereotype.Service;
@@ -52,7 +51,7 @@ public class LogImportService {
 
     private LogEntry parseLine(String line, Server server) {
         Instant ts = Instant.now();
-        LogLevel level = LogLevel.INFO;
+        String level = "INFO";
         String source = "upload";
         String msg = line;
 
@@ -60,7 +59,8 @@ public class LogImportService {
         if (m.matches()) {
             String tsStr = m.group("ts");
             try { ts = Instant.parse(tsStr.endsWith("Z") ? tsStr : tsStr + "Z"); } catch (DateTimeParseException ignored) {}
-            try { level = LogLevel.valueOf(m.group("level")); } catch (IllegalArgumentException ignored) {}
+            String lv = m.group("level");
+            if (lv != null && !lv.isBlank()) level = lv.toUpperCase();
             source = m.group("source");
             msg = m.group("msg");
         } else {
@@ -70,7 +70,8 @@ public class LogImportService {
                 try {
                     ts = parseLog4jTs(tsStr);
                 } catch (Exception ignored) {}
-                try { level = LogLevel.valueOf(m.group("level")); } catch (IllegalArgumentException ignored) {}
+                String lv = m.group("level");
+                if (lv != null && !lv.isBlank()) level = lv.toUpperCase();
                 source = m.group("source");
                 msg = m.group("msg");
             } else {
@@ -79,9 +80,32 @@ public class LogImportService {
                     try { ts = parseSyslogTs(m.group("mon"), m.group("day"), m.group("time")); } catch (Exception ignored) {}
                     source = m.group("source");
                     msg = m.group("msg");
-                    level = LogLevel.INFO;
+                    level = "INFO";
+            }
+        }
+
+        // Heuristics for other formats (nginx combined, Postgres, etc.)
+        if (level == null || level.isBlank() || "INFO".equals(level)) {
+            // Postgres: look for tokens like ERROR, FATAL, WARNING, LOG, DEBUG, INFO
+            java.util.regex.Matcher lvlTok = java.util.regex.Pattern.compile("\\b(ERROR|FATAL|WARNING|WARN|LOG|DEBUG|INFO|TRACE)\\b", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(line);
+            if (lvlTok.find()) {
+                String tok = lvlTok.group(1).toUpperCase();
+                level = tok.equals("WARNING") ? "WARN" : tok;
+            }
+        }
+        if (level == null || level.isBlank() || "INFO".equals(level)) {
+            // nginx combined log: capture HTTP status code (3 digits) after the quoted request
+            java.util.regex.Matcher mng = java.util.regex.Pattern.compile("\"\\S+\\s+\\S+\\s+\\S+\"\\s+(?<status>\\d{3})\\b").matcher(line);
+            if (mng.find()) {
+                level = mng.group("status");
+            } else {
+                // Fallback: first standalone 3-digit number (100-599)
+                java.util.regex.Matcher any3 = java.util.regex.Pattern.compile("\\b([1-5]\\d{2})\\b").matcher(line);
+                if (any3.find()) {
+                    level = any3.group(1);
                 }
             }
+        }
         }
         if (msg.length() > MAX_MESSAGE) {
             msg = msg.substring(0, MAX_MESSAGE);

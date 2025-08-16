@@ -1,7 +1,6 @@
 package com.example.logbook.repository;
 
 import com.example.logbook.domain.LogEntry;
-import com.example.logbook.domain.LogLevel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -14,8 +13,8 @@ public interface LogEntryRepository extends JpaRepository<LogEntry, Long>, JpaSp
     void deleteByServer_Id(Long serverId);
 
     @Query("select distinct e.logLevel from LogEntry e")
-    List<LogLevel> findDistinctLevels();
+    List<String> findDistinctLevels();
 
     @Query("select distinct e.logLevel from LogEntry e where e.server.id = :serverId")
-    List<LogLevel> findDistinctLevelsByServerId(@Param("serverId") Long serverId);
+    List<String> findDistinctLevelsByServerId(@Param("serverId") Long serverId);
 }

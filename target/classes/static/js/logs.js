@@ -3,6 +3,7 @@
 let currentPage = 0;
 let currentFilters = {};
 let totalPages = 0;
+let selectedLevels = [];
 
 async function loadServers() {
     try {
@@ -32,6 +33,11 @@ async function loadServers() {
 document.addEventListener('DOMContentLoaded', function() {
     loadServers();
     loadLogs();
+    // Prevent dropdown from closing when clicking inside
+    const levelMenu = document.getElementById('levelDropdownMenu');
+    if (levelMenu) {
+        levelMenu.addEventListener('click', function(e) { e.stopPropagation(); });
+    }
     
     // Set up filter form submission
     document.getElementById('filterForm').addEventListener('submit', function(e) {
@@ -71,11 +77,7 @@ async function loadLogs(page = 0, filters = {}) {
         const container = document.getElementById('logsContainer');
         showLoading(container);
         
-        const params = {
-            page: page,
-            size: 20,
-            ...filters
-        };
+        const params = { page, size: 20, ...filters };
         
         // Convert datetime-local values to ISO format
         if (params.from) {
@@ -88,10 +90,11 @@ async function loadLogs(page = 0, filters = {}) {
         let response;
         if (params.serverId) {
             const { serverId, ...rest } = params;
-            const qs = new URLSearchParams(rest).toString();
+            const qs = toQueryString(rest);
             response = await apiRequest(`/api/servers/${serverId}/logs${qs ? '?' + qs : ''}`);
         } else {
-            response = await fetchLogs(params);
+            const qs = toQueryString(params);
+            response = await apiRequest(`/api/logs${qs ? '?' + qs : ''}`);
         }
         const logs = response.content || [];
         
@@ -121,7 +124,7 @@ async function loadLogs(page = 0, filters = {}) {
         }
         
         renderPagination();
-        
+
     } catch (error) {
         console.error('Failed to load logs:', error);
         const container = document.getElementById('logsContainer');
@@ -143,7 +146,7 @@ function renderLogs(logs) {
     const container = document.getElementById('logsContainer');
     
     const logsHtml = logs.map(log => `
-        <div class="log-entry level-${log.logLevel}">
+        <div class="log-entry ${levelClass(log.logLevel)}">
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div class="d-flex gap-2 align-items-center">
                     ${formatLogLevel(log.logLevel)}
@@ -282,7 +285,7 @@ function changePage(page) {
 function applyFilters() {
     const filters = {
         serverId: document.getElementById('serverFilter').value,
-        level: document.getElementById('levelFilter').value,
+        level: [...selectedLevels],
         source: document.getElementById('sourceFilter').value,
         from: document.getElementById('fromDate').value,
         to: document.getElementById('toDate').value,
@@ -301,16 +304,21 @@ function applyFilters() {
 
 function clearFilters() {
     document.getElementById('filterForm').reset();
+    // clear selected levels UI
+    selectedLevels = [];
+    updateLevelDropdownLabel();
+    const opts = document.querySelectorAll('#levelOptions input.level-option');
+    opts.forEach(chk => chk.checked = false);
+    const selectAll = document.getElementById('levelSelectAll');
+    if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
     loadLogs(0, {});
 }
 
 function exportFilteredLogs() {
-    const format = 'csv'; // Could be made configurable
-    const params = new URLSearchParams(currentFilters);
-    params.append('format', format);
-    params.append('limit', '1000');
-    
-    const url = `${API_BASE}/export?${params.toString()}`;
+    const format = 'csv';
+    const p = { ...currentFilters, format, limit: '1000' };
+    const qs = toQueryString(p);
+    const url = `${API_BASE}/export?${qs}`;
     window.open(url, '_blank');
 }
 
@@ -388,28 +396,111 @@ function escapeHtml(text) {
     return text ? text.replace(/[&<>"']/g, function(m) { return map[m]; }) : '';
 }
 
+function levelClass(level) {
+    if (!level) return '';
+    const info = (typeof httpStatusInfo === 'function') ? httpStatusInfo(String(level)) : null;
+    if (info) {
+        return `level-http-${info.category}`;
+    }
+    return `level-${level}`;
+}
+
+function toQueryString(params) {
+    const sp = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+        if (v == null || v === '' || (Array.isArray(v) && v.length === 0)) return;
+        if (k === 'level' && Array.isArray(v)) {
+            v.forEach(val => sp.append('level', val));
+        } else {
+            sp.append(k, v);
+        }
+    });
+    return sp.toString();
+}
+
 async function loadAvailableLevels(serverId) {
     try {
-        const select = document.getElementById('levelFilter');
-        const current = select.value;
-        select.innerHTML = '<option value="">All Levels</option>';
+        const container = document.getElementById('levelOptions');
+        const prev = [...selectedLevels];
+        container.innerHTML = '';
         let levels;
         if (serverId) {
             levels = await apiRequest(`/api/servers/${serverId}/log-levels`);
         } else {
             levels = await apiRequest(`/api/logs/levels`);
         }
+        const fragment = document.createDocumentFragment();
         (levels || []).forEach(level => {
-            const opt = document.createElement('option');
-            opt.value = level;
-            opt.textContent = level;
-            select.appendChild(opt);
+            const id = `level-${level.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+            const div = document.createElement('div');
+            div.className = 'form-check ms-1';
+            div.innerHTML = `
+                <input class="form-check-input level-option" type="checkbox" value="${level}" id="${id}">
+                <label class="form-check-label" for="${id}">${level}</label>
+            `;
+            fragment.appendChild(div);
         });
-        // Restore selection if still present
-        if ([...select.options].some(o => o.value === current)) {
-            select.value = current;
-        }
+        container.appendChild(fragment);
+
+        // Restore selections where possible
+        selectedLevels = prev.filter(v => (levels || []).includes(v));
+        selectedLevels.forEach(v => {
+            const el = document.querySelector(`#levelOptions input.level-option[value="${CSS.escape(v)}"]`);
+            if (el) el.checked = true;
+        });
+        wireLevelEvents();
+        updateSelectAllState();
+        updateLevelDropdownLabel();
     } catch (e) {
         console.error('Failed to load levels', e);
+    }
+}
+
+function wireLevelEvents() {
+    const opts = document.querySelectorAll('#levelOptions input.level-option');
+    opts.forEach(chk => {
+        chk.addEventListener('change', () => {
+            const val = chk.value;
+            if (chk.checked) {
+                if (!selectedLevels.includes(val)) selectedLevels.push(val);
+            } else {
+                selectedLevels = selectedLevels.filter(v => v !== val);
+            }
+            updateSelectAllState();
+            updateLevelDropdownLabel();
+        });
+    });
+    const selectAll = document.getElementById('levelSelectAll');
+    if (selectAll) {
+        selectAll.addEventListener('change', () => {
+            const all = document.querySelectorAll('#levelOptions input.level-option');
+            selectedLevels = [];
+            all.forEach(chk => {
+                chk.checked = selectAll.checked;
+                if (selectAll.checked) selectedLevels.push(chk.value);
+            });
+            selectAll.indeterminate = false;
+            updateLevelDropdownLabel();
+        });
+    }
+}
+
+function updateSelectAllState() {
+    const selectAll = document.getElementById('levelSelectAll');
+    const all = document.querySelectorAll('#levelOptions input.level-option');
+    const checked = document.querySelectorAll('#levelOptions input.level-option:checked');
+    if (!selectAll) return;
+    if (checked.length === 0) { selectAll.checked = false; selectAll.indeterminate = false; return; }
+    if (checked.length === all.length) { selectAll.checked = true; selectAll.indeterminate = false; return; }
+    selectAll.checked = false; selectAll.indeterminate = true;
+}
+
+function updateLevelDropdownLabel() {
+    const btn = document.getElementById('levelDropdown');
+    if (!btn) return;
+    if (!selectedLevels || selectedLevels.length === 0) {
+        btn.textContent = 'All Levels';
+    } else {
+        btn.textContent = `${selectedLevels.length} selected`;
     }
 }

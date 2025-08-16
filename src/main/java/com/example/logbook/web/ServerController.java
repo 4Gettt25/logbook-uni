@@ -1,7 +1,6 @@
 package com.example.logbook.web;
 
 import com.example.logbook.domain.LogEntry;
-import com.example.logbook.domain.LogLevel;
 import com.example.logbook.domain.Server;
 import com.example.logbook.repository.ServerRepository;
 import com.example.logbook.service.LogEntryService;
@@ -72,7 +71,7 @@ public class ServerController {
     public Page<LogEntry> logs(@PathVariable long id,
                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
                                @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-                               @RequestParam(required = false) LogLevel level,
+                               @RequestParam(required = false) java.util.List<String> level,
                                @RequestParam(required = false) String source,
                                @RequestParam(required = false, name = "q") String query,
                                @RequestParam(defaultValue = "0") int page,
@@ -84,10 +83,12 @@ public class ServerController {
     }
 
     @GetMapping("/{id}/log-levels")
-    public java.util.List<LogLevel> availableLevels(@PathVariable long id) {
+    public java.util.List<String> availableLevels(@PathVariable long id) {
         // ensure server exists
         servers.findById(id).orElseThrow(() -> new NoSuchElementException("Server not found: " + id));
-        return logEntries.findDistinctLevelsByServerId(id);
+        java.util.List<String> levels = logEntries.findDistinctLevelsByServerId(id);
+        java.util.Collections.sort(levels, String.CASE_INSENSITIVE_ORDER);
+        return levels;
     }
 
     @PostMapping(path = "/{id}/logs/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

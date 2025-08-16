@@ -1,7 +1,6 @@
 package com.example.logbook;
 
 import com.example.logbook.domain.LogEntry;
-import com.example.logbook.domain.LogLevel;
 import com.example.logbook.repository.LogEntryRepository;
 import com.example.logbook.service.LogEntrySpecifications;
 import org.junit.jupiter.api.Test;
@@ -24,7 +23,7 @@ class LogEntryRepositoryTests {
     void savesAndFiltersByLevelAndSource() {
         LogEntry e1 = new LogEntry();
         e1.setTimestamp(Instant.now());
-        e1.setLogLevel(LogLevel.INFO);
+        e1.setLogLevel("INFO");
         e1.setSource("auth");
         e1.setMessage("User logged in");
         
@@ -32,14 +31,14 @@ class LogEntryRepositoryTests {
 
         LogEntry e2 = new LogEntry();
         e2.setTimestamp(Instant.now());
-        e2.setLogLevel(LogLevel.ERROR);
+        e2.setLogLevel("ERROR");
         e2.setSource("api");
         e2.setMessage("Unhandled exception");
         
         repository.save(e2);
 
         Specification<LogEntry> spec = Specification
-                .where(LogEntrySpecifications.level(LogLevel.ERROR))
+                .where(LogEntrySpecifications.level("ERROR"))
                 .and(LogEntrySpecifications.source("api"));
         List<LogEntry> results = repository.findAll(spec);
         assertThat(results).hasSize(1);

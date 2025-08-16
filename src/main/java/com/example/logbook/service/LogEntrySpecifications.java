@@ -1,7 +1,6 @@
 package com.example.logbook.service;
 
 import com.example.logbook.domain.LogEntry;
-import com.example.logbook.domain.LogLevel;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.Instant;
@@ -17,8 +16,16 @@ public final class LogEntrySpecifications {
         return (root, query, cb) -> to == null ? null : cb.lessThanOrEqualTo(root.get("timestamp"), to);
     }
 
-    public static Specification<LogEntry> level(LogLevel level) {
-        return (root, query, cb) -> level == null ? null : cb.equal(root.get("logLevel"), level);
+    public static Specification<LogEntry> levels(java.util.List<String> levels) {
+        return (root, query, cb) -> {
+            if (levels == null || levels.isEmpty()) return null;
+            var preds = levels.stream()
+                    .filter(s -> s != null && !s.isBlank())
+                    .map(s -> cb.equal(root.get("logLevel"), s))
+                    .toArray(jakarta.persistence.criteria.Predicate[]::new);
+            if (preds.length == 0) return null;
+            return cb.or(preds);
+        };
     }
 
     public static Specification<LogEntry> source(String source) {

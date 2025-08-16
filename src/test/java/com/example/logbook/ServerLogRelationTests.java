@@ -1,7 +1,6 @@
 package com.example.logbook;
 
 import com.example.logbook.domain.LogEntry;
-import com.example.logbook.domain.LogLevel;
 import com.example.logbook.domain.Server;
 import com.example.logbook.repository.LogEntryRepository;
 import com.example.logbook.repository.ServerRepository;
@@ -36,7 +35,7 @@ class ServerLogRelationTests {
 
         LogEntry a = new LogEntry();
         a.setTimestamp(Instant.now());
-        a.setLogLevel(LogLevel.INFO);
+        a.setLogLevel("INFO");
         a.setSource("app");
         a.setMessage("hello A");
         a.setServer(s1);
@@ -44,7 +43,7 @@ class ServerLogRelationTests {
 
         LogEntry b = new LogEntry();
         b.setTimestamp(Instant.now());
-        b.setLogLevel(LogLevel.INFO);
+        b.setLogLevel("INFO");
         b.setSource("app");
         b.setMessage("hello B");
         b.setServer(s2);
@@ -54,4 +53,3 @@ class ServerLogRelationTests {
         assertThat(onlyA).extracting(LogEntry::getMessage).containsExactly("hello A");
     }
 }
-

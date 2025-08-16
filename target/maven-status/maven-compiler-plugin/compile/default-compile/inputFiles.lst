@@ -1,6 +1,5 @@
 /home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/LogbookApplication.java
 /home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/domain/LogEntry.java
-/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/domain/LogLevel.java
 /home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/domain/Server.java
 /home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/repository/LogEntryRepository.java
 /home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/repository/ServerRepository.java

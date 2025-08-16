@@ -1,7 +1,6 @@
 package com.example.logbook.web;
 
 import com.example.logbook.domain.LogEntry;
-import com.example.logbook.domain.LogLevel;
 import com.example.logbook.service.LogEntryService;
 import com.example.logbook.repository.LogEntryRepository;
 import org.junit.jupiter.api.Test;
@@ -41,7 +40,7 @@ class LogEntryControllerTests {
         LogEntry e = new LogEntry();
         e.setId(1L);
         e.setTimestamp(Instant.parse("2024-01-01T00:00:00Z"));
-        e.setLogLevel(LogLevel.INFO);
+        e.setLogLevel("INFO");
         e.setSource("auth");
         e.setMessage("ok");
         
@@ -78,7 +77,7 @@ class LogEntryControllerTests {
         LogEntry created = new LogEntry();
         created.setId(10L);
         created.setTimestamp(Instant.parse("2024-01-01T00:00:00Z"));
-        created.setLogLevel(LogLevel.ERROR);
+        created.setLogLevel("ERROR");
         created.setSource("api");
         created.setMessage("boom");
         

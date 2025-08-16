@@ -79,6 +79,20 @@ body {
     color: white;
 }
 
+/* HTTP status badges and entry accents */
+.http-badge { font-size: 0.75em; font-weight: 600; }
+.http-1xx { background-color: #6c757d; color: #fff; }
+.http-2xx { background-color: #198754; color: #fff; }
+.http-3xx { background-color: #0dcaf0; color: #212529; }
+.http-4xx { background-color: #ffc107; color: #212529; }
+.http-5xx { background-color: #dc3545; color: #fff; }
+
+.log-entry.level-http-1xx { border-left-color: #6c757d; }
+.log-entry.level-http-2xx { border-left-color: #198754; }
+.log-entry.level-http-3xx { border-left-color: #0dcaf0; }
+.log-entry.level-http-4xx { border-left-color: #ffc107; }
+.log-entry.level-http-5xx { border-left-color: #dc3545; }
+
 .status-badge {
     font-size: 0.75em;
     padding: 0.25em 0.5em;

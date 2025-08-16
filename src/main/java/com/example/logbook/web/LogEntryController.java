@@ -1,7 +1,6 @@
 package com.example.logbook.web;
 
 import com.example.logbook.domain.LogEntry;
-import com.example.logbook.domain.LogLevel;
 import com.example.logbook.service.LogEntryService;
 import com.example.logbook.repository.LogEntryRepository;
 import jakarta.validation.Valid;
@@ -36,7 +35,7 @@ public class LogEntryController {
     public Page<LogEntry> search(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(required = false) LogLevel level,
+            @RequestParam(required = false) java.util.List<String> level,
             @RequestParam(required = false) String source,
             @RequestParam(required = false, name = "q") String query,
             @RequestParam(defaultValue = "0") int page,
@@ -70,7 +69,7 @@ public class LogEntryController {
     public ResponseEntity<byte[]> export(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(required = false) LogLevel level,
+            @RequestParam(required = false) java.util.List<String> level,
             @RequestParam(required = false) String source,
             @RequestParam(required = false, name = "q") String query,
             @RequestParam(defaultValue = "csv") String format,
@@ -112,8 +111,10 @@ public class LogEntryController {
     }
 
     @GetMapping("/levels")
-    public List<LogLevel> availableLevels() {
-        return repository.findDistinctLevels();
+    public List<String> availableLevels() {
+        List<String> levels = repository.findDistinctLevels();
+        java.util.Collections.sort(levels, String.CASE_INSENSITIVE_ORDER);
+        return levels;
     }
 
     private static String escape(String in) {

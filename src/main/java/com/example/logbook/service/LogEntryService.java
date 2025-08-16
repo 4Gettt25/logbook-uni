@@ -1,7 +1,6 @@
 package com.example.logbook.service;
 
 import com.example.logbook.domain.LogEntry;
-import com.example.logbook.domain.LogLevel;
 import com.example.logbook.repository.LogEntryRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,14 +23,14 @@ public class LogEntryService {
 
     public Page<LogEntry> search(Instant from,
                                  Instant to,
-                                 LogLevel level,
+                                 java.util.List<String> levels,
                                  String source,
                                  String query,
                                  Pageable pageable) {
         Specification<LogEntry> spec = Specification
                 .where(LogEntrySpecifications.timestampFrom(from))
                 .and(LogEntrySpecifications.timestampTo(to))
-                .and(LogEntrySpecifications.level(level))
+                .and(LogEntrySpecifications.levels(levels))
                 .and(LogEntrySpecifications.source(source))
                 .and(LogEntrySpecifications.message(query));
         return repository.findAll(spec, pageable);
@@ -40,7 +39,7 @@ public class LogEntryService {
     public Page<LogEntry> searchByServer(Long serverId,
                                          Instant from,
                                          Instant to,
-                                         LogLevel level,
+                                         java.util.List<String> levels,
                                          String source,
                                          String query,
                                          Pageable pageable) {
@@ -48,7 +47,7 @@ public class LogEntryService {
                 .where(LogEntrySpecifications.serverId(serverId))
                 .and(LogEntrySpecifications.timestampFrom(from))
                 .and(LogEntrySpecifications.timestampTo(to))
-                .and(LogEntrySpecifications.level(level))
+                .and(LogEntrySpecifications.levels(levels))
                 .and(LogEntrySpecifications.source(source))
                 .and(LogEntrySpecifications.message(query));
         return repository.findAll(spec, pageable);

@@ -24,9 +24,9 @@ public class LogEntry {
     @NotNull
     private Instant timestamp;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "log_level", nullable = false)
-    private LogLevel logLevel;
+    @Size(max = 50)
+    private String logLevel;
 
     @NotBlank
     @Size(max = 255)
@@ -60,11 +60,11 @@ public class LogEntry {
         this.timestamp = timestamp;
     }
 
-    public LogLevel getLogLevel() {
+    public String getLogLevel() {
         return logLevel;
     }
 
-    public void setLogLevel(LogLevel logLevel) {
+    public void setLogLevel(String logLevel) {
         this.logLevel = logLevel;
     }
 
