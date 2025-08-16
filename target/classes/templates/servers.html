@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servers - Logbook</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="fas fa-book"></i> Logbook
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/logs}">
+                            <i class="fas fa-list"></i> View Logs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/servers}">
+                            <i class="fas fa-server"></i> Servers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/upload}">
+                            <i class="fas fa-upload"></i> Upload Logs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/create}">
+                            <i class="fas fa-plus"></i> Create Log
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1><i class="fas fa-server"></i> Server Management</h1>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServerModal">
+                        <i class="fas fa-plus"></i> Add Server
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Servers List -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-list"></i> Servers</h5>
+                <span id="serverCount" class="badge bg-primary">Loading...</span>
+            </div>
+            <div class="card-body">
+                <div id="serversContainer">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pagination -->
+                <nav aria-label="Servers pagination" id="paginationContainer" style="display: none;">
+                    <ul class="pagination justify-content-center" id="pagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Server Modal -->
+    <div class="modal fade" id="addServerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Server</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addServerForm">
+                        <div class="mb-3">
+                            <label for="serverName" class="form-label">Server Name <span class="text-danger">*</span></label>
+                            <input type="text" id="serverName" class="form-control" required 
+                                   placeholder="e.g., web-server-01">
+                            <div class="invalid-feedback">Please provide a server name.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serverHostname" class="form-label">Hostname/IP</label>
+                            <input type="text" id="serverHostname" class="form-control" 
+                                   placeholder="e.g., 192.168.1.100 or web-server.example.com">
+                            <div class="form-text">Optional hostname or IP address</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serverDescription" class="form-label">Description</label>
+                            <textarea id="serverDescription" class="form-control" rows="3" 
+                                      placeholder="Description of the server..."></textarea>
+                            <div class="form-text">Optional description</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="createServer()">
+                        <i class="fas fa-save"></i> Create Server
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/servers.js}"></script>
+</body>
+</html>

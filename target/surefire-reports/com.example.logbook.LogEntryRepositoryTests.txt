@@ -1,0 +1,78 @@
+-------------------------------------------------------------------------------
+Test set: com.example.logbook.LogEntryRepositoryTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 2.033 s <<< FAILURE! -- in com.example.logbook.LogEntryRepositoryTests
+com.example.logbook.LogEntryRepositoryTests.savesAndFiltersByLevelAndSource -- Time elapsed: 0.078 s <<< ERROR!
+java.lang.IllegalStateException: Could not initialize plugin: interface org.mockito.plugins.MockMaker (alternate: null)
+	at org.mockito.internal.configuration.plugins.PluginLoader$1.invoke(PluginLoader.java:85)
+	at jdk.proxy2/jdk.proxy2.$Proxy131.getHandler(Unknown Source)
+	at org.mockito.internal.util.MockUtil.getMockHandlerOrNull(MockUtil.java:158)
+	at org.mockito.internal.util.MockUtil.isMock(MockUtil.java:147)
+	at org.mockito.internal.util.DefaultMockingDetails.isMock(DefaultMockingDetails.java:32)
+	at org.springframework.boot.test.mock.mockito.MockReset.get(MockReset.java:106)
+	at org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener.resetMocks(ResetMocksTestExecutionListener.java:85)
+	at org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener.resetMocks(ResetMocksTestExecutionListener.java:73)
+	at org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener.beforeTestMethod(ResetMocksTestExecutionListener.java:60)
+	at org.springframework.test.context.TestContextManager.beforeTestMethod(TestContextManager.java:320)
+	at org.springframework.test.context.junit.jupiter.SpringExtension.beforeEach(SpringExtension.java:240)
+	at java.base/java.util.ArrayList.forEach(Unknown Source)
+	at java.base/java.util.ArrayList.forEach(Unknown Source)
+	Suppressed: java.lang.IllegalStateException: Could not initialize plugin: interface org.mockito.plugins.MockMaker (alternate: null)
+		at org.mockito.internal.configuration.plugins.PluginLoader$1.invoke(PluginLoader.java:85)
+		at jdk.proxy2/jdk.proxy2.$Proxy131.getHandler(Unknown Source)
+		at org.mockito.internal.util.MockUtil.getMockHandlerOrNull(MockUtil.java:158)
+		at org.mockito.internal.util.MockUtil.isMock(MockUtil.java:147)
+		at org.mockito.internal.util.DefaultMockingDetails.isMock(DefaultMockingDetails.java:32)
+		at org.springframework.boot.test.mock.mockito.MockReset.get(MockReset.java:106)
+		at org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener.resetMocks(ResetMocksTestExecutionListener.java:85)
+		at org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener.resetMocks(ResetMocksTestExecutionListener.java:73)
+		at org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener.afterTestMethod(ResetMocksTestExecutionListener.java:67)
+		at org.springframework.test.context.TestContextManager.afterTestMethod(TestContextManager.java:487)
+		at org.springframework.test.context.junit.jupiter.SpringExtension.afterEach(SpringExtension.java:278)
+		... 2 more
+	Caused by: java.lang.IllegalStateException: Internal problem occurred, please report it. Mockito is unable to load the default implementation of class that is a part of Mockito distribution. Failed to load interface org.mockito.plugins.MockMaker
+		at org.mockito.internal.configuration.plugins.DefaultMockitoPlugins.create(DefaultMockitoPlugins.java:105)
+		at org.mockito.internal.configuration.plugins.DefaultMockitoPlugins.getDefaultPlugin(DefaultMockitoPlugins.java:79)
+		at org.mockito.internal.configuration.plugins.PluginLoader.loadPlugin(PluginLoader.java:75)
+		at org.mockito.internal.configuration.plugins.PluginLoader.loadPlugin(PluginLoader.java:49)
+		at org.mockito.internal.configuration.plugins.PluginRegistry.<init>(PluginRegistry.java:29)
+		at org.mockito.internal.configuration.plugins.Plugins.<clinit>(Plugins.java:26)
+		at org.mockito.internal.MockitoCore.<clinit>(MockitoCore.java:71)
+		at org.mockito.Mockito.<clinit>(Mockito.java:1683)
+		at org.springframework.boot.test.mock.mockito.MockReset.get(MockReset.java:105)
+		at org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener.resetMocks(ResetMocksTestExecutionListener.java:85)
+		at org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener.resetMocks(ResetMocksTestExecutionListener.java:73)
+		at org.springframework.boot.test.mock.mockito.ResetMocksTestExecutionListener.beforeTestMethod(ResetMocksTestExecutionListener.java:60)
+		at org.springframework.test.context.TestContextManager.beforeTestMethod(TestContextManager.java:320)
+		at org.springframework.test.context.junit.jupiter.SpringExtension.beforeEach(SpringExtension.java:240)
+		... 2 more
+	Caused by: java.lang.reflect.InvocationTargetException
+		at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Unknown Source)
+		at java.base/java.lang.reflect.Constructor.newInstance(Unknown Source)
+		at org.mockito.internal.configuration.plugins.DefaultMockitoPlugins.create(DefaultMockitoPlugins.java:103)
+		... 15 more
+	Caused by: org.mockito.exceptions.base.MockitoInitializationException: 
+Could not initialize inline Byte Buddy mock maker.
+
+It appears as if you are running on a JRE. Either install a JDK or add JNA to the class path.
+Java               : 21
+JVM vendor name    : Arch Linux
+JVM vendor version : 21.0.8+9
+JVM name           : OpenJDK 64-Bit Server VM
+JVM version        : 21.0.8+9
+JVM info           : mixed mode, sharing
+OS name            : Linux
+OS version         : 6.16.0-arch2-1
+
+		at org.mockito.internal.creation.bytebuddy.InlineDelegateByteBuddyMockMaker.<init>(InlineDelegateByteBuddyMockMaker.java:260)
+		at org.mockito.internal.creation.bytebuddy.InlineByteBuddyMockMaker.<init>(InlineByteBuddyMockMaker.java:23)
+		... 18 more
+	Caused by: java.lang.IllegalStateException: No compatible attachment provider is available
+		at net.bytebuddy.agent.ByteBuddyAgent.install(ByteBuddyAgent.java:600)
+		at net.bytebuddy.agent.ByteBuddyAgent.install(ByteBuddyAgent.java:584)
+		at net.bytebuddy.agent.ByteBuddyAgent.install(ByteBuddyAgent.java:536)
+		at net.bytebuddy.agent.ByteBuddyAgent.install(ByteBuddyAgent.java:513)
+		at org.mockito.internal.creation.bytebuddy.InlineDelegateByteBuddyMockMaker.<clinit>(InlineDelegateByteBuddyMockMaker.java:133)
+		... 19 more
+Caused by: [CIRCULAR REFERENCE: java.lang.IllegalStateException: Internal problem occurred, please report it. Mockito is unable to load the default implementation of class that is a part of Mockito distribution. Failed to load interface org.mockito.plugins.MockMaker]
+

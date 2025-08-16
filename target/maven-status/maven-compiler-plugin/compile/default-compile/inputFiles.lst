@@ -1,0 +1,14 @@
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/LogbookApplication.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/domain/LogEntry.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/domain/LogLevel.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/domain/LogStatus.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/domain/Server.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/repository/LogEntryRepository.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/repository/ServerRepository.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/service/LogEntryService.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/service/LogEntrySpecifications.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/service/LogImportService.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/web/LogEntryController.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/web/RestExceptionHandler.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/web/ServerController.java
+/home/felixg/.github/logbook-uni/src/main/java/com/example/logbook/web/WebController.java

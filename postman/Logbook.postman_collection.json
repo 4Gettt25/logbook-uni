@@ -1,0 +1,100 @@
+{
+  "info": {
+    "name": "Logbook API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "5b7b3b7f-3a87-4a3a-bb52-7b2ccad0abcd"
+  },
+  "item": [
+    {
+      "name": "List logs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/logs?source=auth&page=0&size=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "logs"
+          ],
+          "query": [
+            { "key": "source", "value": "auth" },
+            { "key": "page", "value": "0" },
+            { "key": "size", "value": "20" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get log by id",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/logs/{{id}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","logs","{{id}}"]
+        }
+      }
+    },
+    {
+      "name": "Create log",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"timestamp\": \"2024-01-01T00:00:00Z\",\n  \"logLevel\": \"INFO\",\n  \"source\": \"auth\",\n  \"message\": \"User logged in\",\n  \"username\": \"alice\",\n  \"category\": \"security\",\n  \"status\": \"OPEN\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/logs", "host": ["{{baseUrl}}"], "path": ["api","logs"] }
+      }
+    },
+    {
+      "name": "Update log",
+      "request": {
+        "method": "PUT",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"message\": \"Updated message\",\n  \"status\": \"RESOLVED\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/logs/{{id}}", "host": ["{{baseUrl}}"], "path": ["api","logs","{{id}}"] }
+      }
+    },
+    {
+      "name": "Delete log",
+      "request": {
+        "method": "DELETE",
+        "url": { "raw": "{{baseUrl}}/api/logs/{{id}}", "host": ["{{baseUrl}}"], "path": ["api","logs","{{id}}"] }
+      }
+    },
+    {
+      "name": "Export CSV",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/logs/export?format=csv&limit=100",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","logs","export"],
+          "query": [ {"key":"format","value":"csv"}, {"key":"limit","value":"100"} ]
+        }
+      }
+    },
+    {
+      "name": "Export JSON",
+      "request": {
+        "method": "GET",
+        "header": [ {"key":"Accept","value":"application/json"} ],
+        "url": {
+          "raw": "{{baseUrl}}/api/logs/export?format=json&limit=100",
+          "host": ["{{baseUrl}}"],
+          "path": ["api","logs","export"],
+          "query": [ {"key":"format","value":"json"}, {"key":"limit","value":"100"} ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "id", "value": "1" }
+  ]
+}
+

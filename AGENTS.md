@@ -6,9 +6,9 @@
 - If multiple modules are used, each module is a subfolder with its own `build.gradle`/`pom.xml`.
 
 ## Build, Test, and Development Commands
-- Maven: `./mvnw spring-boot:run` (run app), `./mvnw test` (unit tests), `./mvnw verify` (tests + checks), `./mvnw clean package` (build JAR/WAR).
-- Gradle: `./gradlew bootRun` (run app), `./gradlew test` (unit tests), `./gradlew check` (tests + checks), `./gradlew clean build` (build artifact).
-- Use the wrapper (`mvnw`/`gradlew`) if present; otherwise use `mvn`/`gradle`.
+- Maven: `mvn spring-boot:run` (run app), `mvn test` (unit tests), `mvn verify` (tests + checks), `mvn clean package` (build JAR/WAR).
+- Wrapper: not committed; use system Maven 3.9+ and Java 17.
+- Profiles: default uses in-memory H2; activate PostgreSQL via `-Dspring.profiles.active=postgres`.
 
 ## Coding Style & Naming Conventions
 - Java style: 4-space indent, UTF-8, max line length ~120 where practical.
@@ -28,6 +28,21 @@
 
 ## Security & Configuration Tips
 - Do not commit secrets. Use environment variables or profile-specific configs (`application-dev.yml`, `application-prod.yml`).
-- Use `SPRING_PROFILES_ACTIVE=dev` for local runs; keep production credentials out of the repo.
-- `.gitignore` already excludes common Java artifacts; add entries for any generated files specific to your setup.
+- Use `.env` for local-only secrets; copy `.env.example` to `.env` and adjust. The app loads `.env` via `spring-dotenv`.
+- Use `SPRING_PROFILES_ACTIVE=dev` (or `postgres`) for local runs; keep production credentials out of the repo.
+- `.gitignore` excludes `.env` and `.env.*` (except `.env.example`).
 
+## Notable Changes in This Commit
+- Added a Spring Boot Maven project under `src/main/java` and `src/main/resources` with Java 17.
+- Implemented `LogEntry` entity with ≥7 attributes and indexes for filter fields.
+- Added REST API `GET/POST/PUT/DELETE /api/logs` with paging and filters; simple CSV/JSON export at `/api/logs/export`.
+- Configured default H2 for dev/testing and a `postgres` profile for PostgreSQL via env vars (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`).
+- Introduced JPA Specifications for dynamic filtering and a minimal JPA test.
+- No Maven Wrapper included to avoid committing binaries; use system `mvn`.
+- Added `@ControllerAdvice` (`RestExceptionHandler`) to standardize validation errors, 404s, and generic errors.
+- Added Web MVC tests for the controller under `src/test/java/com/example/logbook/web/`.
+- Added `scripts/curl-examples.sh` and `postman/Logbook.postman_collection.json` for quick API testing.
+- Introduced `Server` entity and repository; `LogEntry` now references a `Server` (FK, indexed).
+- New endpoints under `/api/servers` to list/create/fetch servers and to list logs per server.
+- File upload endpoint `POST /api/servers/{id}/logs/upload` now supports single (`file`) and multi-file (`files`) uploads; response includes per-file counts and total. Parser recognizes ISO-8601, log4j-style, and syslog-style lines.
+- Added `.env` support with `spring-dotenv`; see `.env.example`. Postgres connection params are read from env.

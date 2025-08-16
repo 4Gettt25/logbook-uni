@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Log Entry - Logbook</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="fas fa-book"></i> Logbook
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/logs}">
+                            <i class="fas fa-list"></i> View Logs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/servers}">
+                            <i class="fas fa-server"></i> Servers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/upload}">
+                            <i class="fas fa-upload"></i> Upload Logs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/create}">
+                            <i class="fas fa-plus"></i> Create Log
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-plus"></i> Create New Log Entry</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="createForm">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="logLevel" class="form-label">Log Level <span class="text-danger">*</span></label>
+                                    <select id="logLevel" class="form-select" required>
+                                        <option value="">Select log level</option>
+                                        <option value="TRACE">TRACE</option>
+                                        <option value="DEBUG">DEBUG</option>
+                                        <option value="INFO" selected>INFO</option>
+                                        <option value="WARN">WARN</option>
+                                        <option value="ERROR">ERROR</option>
+                                        <option value="FATAL">FATAL</option>
+                                    </select>
+                                    <div class="invalid-feedback">Please select a log level.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
+                                    <select id="status" class="form-select" required>
+                                        <option value="OPEN" selected>OPEN</option>
+                                        <option value="IN_PROGRESS">IN_PROGRESS</option>
+                                        <option value="RESOLVED">RESOLVED</option>
+                                        <option value="IGNORED">IGNORED</option>
+                                    </select>
+                                    <div class="invalid-feedback">Please select a status.</div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="source" class="form-label">Source <span class="text-danger">*</span></label>
+                                <input type="text" id="source" class="form-control" required 
+                                       placeholder="e.g., com.example.UserService, nginx, database">
+                                <div class="invalid-feedback">Please provide a source.</div>
+                                <div class="form-text">The source of the log entry (service, class, component, etc.)</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="message" class="form-label">Message <span class="text-danger">*</span></label>
+                                <textarea id="message" class="form-control" rows="4" required 
+                                          placeholder="Describe the log entry..."></textarea>
+                                <div class="invalid-feedback">Please provide a message.</div>
+                                <div class="form-text">Detailed description of the log entry</div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" id="username" class="form-control" 
+                                           placeholder="Associated username (optional)">
+                                    <div class="form-text">User associated with this log entry</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="category" class="form-label">Category</label>
+                                    <input type="text" id="category" class="form-control" 
+                                           placeholder="e.g., authentication, database, api">
+                                    <div class="form-text">Category or tag for grouping</div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="timestamp" class="form-label">Timestamp</label>
+                                <input type="datetime-local" id="timestamp" class="form-control">
+                                <div class="form-text">Leave empty to use current time</div>
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-secondary me-md-2" onclick="resetForm()">
+                                    <i class="fas fa-undo"></i> Reset
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Create Log Entry
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Quick Templates -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-magic"></i> Quick Templates</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-danger w-100 mb-2" onclick="loadTemplate('error')">
+                                    <i class="fas fa-exclamation-triangle"></i> Error Template
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-warning w-100 mb-2" onclick="loadTemplate('warning')">
+                                    <i class="fas fa-exclamation"></i> Warning Template
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-info w-100 mb-2" onclick="loadTemplate('info')">
+                                    <i class="fas fa-info-circle"></i> Info Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle"></i> Success
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Log entry has been created successfully!</p>
+                    <p><strong>ID:</strong> <span id="createdLogId"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="createAnother()">Create Another</button>
+                    <a th:href="@{/logs}" class="btn btn-outline-primary">View All Logs</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/create.js}"></script>
+</body>
+</html>
