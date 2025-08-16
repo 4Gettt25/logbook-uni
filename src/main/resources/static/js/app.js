@@ -88,8 +88,16 @@ async function apiRequest(url, options = {}) {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
-        return await response.json();
+        // Handle 204 No Content or non-JSON responses gracefully
+        if (response.status === 204 || response.status === 205) {
+            return null;
+        }
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            return await response.json();
+        }
+        // Fallback: return text for other content types
+        return await response.text();
     } catch (error) {
         console.error('API request failed:', error);
         throw error;
@@ -127,9 +135,15 @@ function exportLogs(format = 'csv') {
     window.open(url, '_blank');
 }
 
+// Fetch single log by ID
+async function getLog(id) {
+    return await apiRequest(`${API_BASE}/${id}`);
+}
+
 // Common event handlers
-function confirmDelete(id, callback) {
-    if (confirm('Are you sure you want to delete this log entry? This action cannot be undone.')) {
+function confirmDelete(id, callback, message) {
+    const prompt = message || 'Are you sure you want to delete this log entry? This action cannot be undone.';
+    if (confirm(prompt)) {
         callback(id);
     }
 }

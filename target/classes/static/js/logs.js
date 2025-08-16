@@ -311,25 +311,26 @@ function exportFilteredLogs() {
 }
 
 function editLog(id) {
-    // Load log data into modal
-    fetchLogs({ page: 0, size: 1 }).then(response => {
-        const log = response.content.find(l => l.id === id);
-        if (log) {
-            document.getElementById('editId').value = log.id;
-            document.getElementById('editLevel').value = log.logLevel;
-            document.getElementById('editStatus').value = log.status;
-            document.getElementById('editSource').value = log.source;
-            document.getElementById('editMessage').value = log.message;
-            document.getElementById('editUsername').value = log.username || '';
-            document.getElementById('editCategory').value = log.category || '';
-            
-            const modal = new bootstrap.Modal(document.getElementById('editModal'));
-            modal.show();
-        }
-    }).catch(error => {
-        console.error('Failed to load log for editing:', error);
-        showToast('Failed to load log entry for editing', 'danger');
-    });
+    // Load single log by ID to avoid pagination issues
+    getLog(id)
+        .then(log => {
+            if (log) {
+                document.getElementById('editId').value = log.id;
+                document.getElementById('editLevel').value = log.logLevel;
+                document.getElementById('editStatus').value = log.status;
+                document.getElementById('editSource').value = log.source;
+                document.getElementById('editMessage').value = log.message;
+                document.getElementById('editUsername').value = log.username || '';
+                document.getElementById('editCategory').value = log.category || '';
+
+                const modal = new bootstrap.Modal(document.getElementById('editModal'));
+                modal.show();
+            }
+        })
+        .catch(error => {
+            console.error('Failed to load log for editing:', error);
+            showToast('Failed to load log entry for editing', 'danger');
+        });
 }
 
 async function saveLogEntry() {

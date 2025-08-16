@@ -1,4 +1,10 @@
 // Servers page JavaScript
+// Show confirmation dialog before deleting
+function confirmDelete(id, deleteFn, message) {
+    if (window.confirm(message || 'Are you sure you want to delete this item?')) {
+        deleteFn(id);
+    }
+}
 
 let currentPage = 0;
 let totalPages = 0;
@@ -105,7 +111,7 @@ function renderServers(servers) {
                                 Loading log count...
                             </span>
                             <button class="btn btn-outline-danger btn-sm" 
-                                    onclick="confirmDelete(${server.id}, deleteServer)"
+                                    onclick="confirmDelete(${server.id}, deleteServer, 'Are you sure you want to delete this server and all its logs? This action cannot be undone.')"
                                     data-bs-toggle="tooltip" title="Delete Server">
                                 <i class="fas fa-trash"></i>
                             </button>

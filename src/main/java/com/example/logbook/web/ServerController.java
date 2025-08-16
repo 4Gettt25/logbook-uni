@@ -7,6 +7,7 @@ import com.example.logbook.domain.Server;
 import com.example.logbook.repository.ServerRepository;
 import com.example.logbook.service.LogEntryService;
 import com.example.logbook.service.LogImportService;
+import com.example.logbook.repository.LogEntryRepository;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,11 +30,13 @@ public class ServerController {
     private final ServerRepository servers;
     private final LogEntryService logService;
     private final LogImportService importService;
+    private final LogEntryRepository logEntries;
 
-    public ServerController(ServerRepository servers, LogEntryService logService, LogImportService importService) {
+    public ServerController(ServerRepository servers, LogEntryService logService, LogImportService importService, LogEntryRepository logEntries) {
         this.servers = servers;
         this.logService = logService;
         this.importService = importService;
+        this.logEntries = logEntries;
     }
 
     @GetMapping
@@ -60,6 +63,8 @@ public class ServerController {
         if (!servers.existsById(id)) {
             throw new NoSuchElementException("Server not found: " + id);
         }
+        // Remove associated logs first to satisfy FK constraints
+        logEntries.deleteByServer_Id(id);
         servers.deleteById(id);
         return ResponseEntity.noContent().build();
     }
