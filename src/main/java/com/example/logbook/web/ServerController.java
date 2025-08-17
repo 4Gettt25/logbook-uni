@@ -6,6 +6,7 @@ import com.example.logbook.repository.ServerRepository;
 import com.example.logbook.service.LogEntryService;
 import com.example.logbook.service.LogImportService;
 import com.example.logbook.repository.LogEntryRepository;
+import com.example.logbook.service.LogMaintenanceService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -29,12 +31,14 @@ public class ServerController {
     private final LogEntryService logService;
     private final LogImportService importService;
     private final LogEntryRepository logEntries;
+    private final LogMaintenanceService maintenance;
 
-    public ServerController(ServerRepository servers, LogEntryService logService, LogImportService importService, LogEntryRepository logEntries) {
+    public ServerController(ServerRepository servers, LogEntryService logService, LogImportService importService, LogEntryRepository logEntries, LogMaintenanceService maintenance) {
         this.servers = servers;
         this.logService = logService;
         this.importService = importService;
         this.logEntries = logEntries;
+        this.maintenance = maintenance;
     }
 
     @GetMapping
@@ -57,6 +61,7 @@ public class ServerController {
     }
 
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<Void> delete(@PathVariable long id) {
         if (!servers.existsById(id)) {
             throw new NoSuchElementException("Server not found: " + id);
@@ -91,10 +96,20 @@ public class ServerController {
         return levels;
     }
 
+    @PostMapping("/{id}/logs/reevaluate")
+    public ResponseEntity<LogMaintenanceService.ReevalResult> reevaluate(@PathVariable long id,
+                                                                         @RequestParam(defaultValue = "false") boolean merge,
+                                                                         @RequestParam(defaultValue = "false") boolean dryRun) {
+        // ensure server exists
+        servers.findById(id).orElseThrow(() -> new NoSuchElementException("Server not found: " + id));
+        var result = maintenance.reevaluateServer(id, merge, dryRun);
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping(path = "/{id}/logs/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UploadResults> upload(@PathVariable long id,
-                                                @RequestPart(value = "file", required = false) MultipartFile file,
-                                                @RequestPart(value = "files", required = false) java.util.List<MultipartFile> files) throws IOException {
+                                                @RequestParam(value = "file", required = false) MultipartFile file,
+                                                @RequestParam(value = "files", required = false) java.util.List<MultipartFile> files) throws IOException {
         Server server = servers.findById(id).orElseThrow(() -> new NoSuchElementException("Server not found: " + id));
         java.util.List<UploadFileResult> results = new java.util.ArrayList<>();
         if (file != null && !file.isEmpty()) {

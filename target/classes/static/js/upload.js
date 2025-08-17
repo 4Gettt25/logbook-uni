@@ -171,7 +171,12 @@ async function uploadFiles() {
         updateProgress(90, 'Processing files...');
         
         if (!response.ok) {
-            throw new Error(`Upload failed: ${response.status}`);
+            let detail = '';
+            try {
+                const text = await response.text();
+                detail = text?.slice(0, 300) || '';
+            } catch (_) {}
+            throw new Error(`Upload failed: ${response.status} ${detail}`);
         }
         
         const result = await response.json();
@@ -187,7 +192,7 @@ async function uploadFiles() {
     } catch (error) {
         console.error('Upload failed:', error);
         hideUploadProgress();
-        showToast('Upload failed. Please try again.', 'danger');
+        showToast(`Upload failed. ${error?.message || 'Please try again.'}`, 'danger');
     }
 }
 

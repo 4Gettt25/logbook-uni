@@ -95,75 +95,52 @@ async function loadRecentLogs() {
 
 function initializeLogLevelChart() {
     const ctx = document.getElementById('logLevelChart').getContext('2d');
-    
     logLevelChart = new Chart(ctx, {
         type: 'doughnut',
-        data: {
-            labels: ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'],
-            datasets: [{
-                data: [0, 0, 0, 0, 0, 0],
-                backgroundColor: [
-                    '#adb5bd',
-                    '#6c757d', 
-                    '#0dcaf0',
-                    '#ffc107',
-                    '#dc3545',
-                    '#dc3545'
-                ],
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
+        data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 2, borderColor: '#fff' }] },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 10,
-                        usePointStyle: true
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.parsed || 0;
-                            return `${label}: ${value}`;
-                        }
-                    }
-                }
+                legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true } },
+                tooltip: { callbacks: { label: (ctx) => `${ctx.label || ''}: ${ctx.parsed || 0}` } }
             }
         }
     });
 }
 
 function updateLogLevelChart(logs) {
-    const levelCounts = {
-        'TRACE': 0,
-        'DEBUG': 0,
-        'INFO': 0,
-        'WARN': 0,
-        'ERROR': 0,
-        'FATAL': 0
-    };
-    
+    const counts = new Map();
+    const inc = (k) => counts.set(k, (counts.get(k) || 0) + 1);
     logs.forEach(log => {
-        if (levelCounts.hasOwnProperty(log.logLevel)) {
-            levelCounts[log.logLevel]++;
+        const lvl = (log.logLevel || '').toString();
+        if (/^\d{3}$/.test(lvl)) {
+            const cat = `HTTP ${lvl[0]}xx`;
+            inc(cat);
+        } else {
+            inc(lvl.toUpperCase());
         }
     });
-    
-    logLevelChart.data.datasets[0].data = [
-        levelCounts.TRACE,
-        levelCounts.DEBUG,
-        levelCounts.INFO,
-        levelCounts.WARN,
-        levelCounts.ERROR,
-        levelCounts.FATAL
-    ];
-    
+    const order = [ 'HTTP 5xx','HTTP 4xx','HTTP 3xx','HTTP 2xx','ERROR','FATAL','WARN','INFO','LOG','DEBUG','TRACE' ];
+    const colors = {
+        'HTTP 5xx':'#dc3545','HTTP 4xx':'#ffc107','HTTP 3xx':'#0dcaf0','HTTP 2xx':'#198754',
+        'ERROR':'#dc3545','FATAL':'#dc3545','WARN':'#ffc107','INFO':'#0dcaf0','LOG':'#6c757d','DEBUG':'#6c757d','TRACE':'#adb5bd'
+    };
+    const entries = Array.from(counts.entries());
+    entries.sort((a,b) => {
+        const ia = order.indexOf(a[0]);
+        const ib = order.indexOf(b[0]);
+        if (ia !== -1 && ib !== -1) return ia - ib;
+        if (ia !== -1) return -1;
+        if (ib !== -1) return 1;
+        return b[1] - a[1];
+    });
+    const labels = entries.map(e => e[0]);
+    const data = entries.map(e => e[1]);
+    const bg = labels.map(l => colors[l] || '#adb5bd');
+    logLevelChart.data.labels = labels;
+    logLevelChart.data.datasets[0].data = data;
+    logLevelChart.data.datasets[0].backgroundColor = bg;
     logLevelChart.update();
 }
 

@@ -17,4 +17,6 @@ public interface LogEntryRepository extends JpaRepository<LogEntry, Long>, JpaSp
 
     @Query("select distinct e.logLevel from LogEntry e where e.server.id = :serverId")
     List<String> findDistinctLevelsByServerId(@Param("serverId") Long serverId);
+
+    List<LogEntry> findByServer_IdOrderByTimestampAscIdAsc(Long serverId);
 }

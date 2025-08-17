@@ -26,6 +26,10 @@ spring:
       path: /h2-console
   flyway:
     baseline-on-migrate: true
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 200MB
 
 server:
   port: 8080

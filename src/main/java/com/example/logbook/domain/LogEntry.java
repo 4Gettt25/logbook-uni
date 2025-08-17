@@ -33,7 +33,7 @@ public class LogEntry {
     private String source;
 
     @NotBlank
-    @Size(max = 4000)
+    @Column(columnDefinition = "TEXT")
     private String message;
 
     @Size(max = 255)

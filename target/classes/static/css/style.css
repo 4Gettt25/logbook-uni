@@ -48,6 +48,11 @@ body {
     border-left-color: #adb5bd;
 }
 
+/* Generic LOG level styling (e.g., PostgreSQL LOG) */
+.log-entry.level-LOG {
+    border-left-color: #6c757d;
+}
+
 .log-level-badge {
     font-size: 0.75em;
     padding: 0.25em 0.5em;
@@ -76,6 +81,11 @@ body {
 
 .log-level-TRACE {
     background-color: #adb5bd;
+    color: white;
+}
+
+.log-level-LOG {
+    background-color: #6c757d;
     color: white;
 }
 

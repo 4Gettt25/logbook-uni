@@ -98,6 +98,9 @@ function renderServers(servers) {
                             <a href="/upload?server=${server.id}" class="btn btn-outline-success btn-sm mb-1">
                                 <i class="fas fa-upload"></i> Upload Files
                             </a>
+                            <button class="btn btn-outline-secondary btn-sm mb-1" onclick="reevaluateServerLogs(${server.id})" data-bs-toggle="tooltip" title="Recompute levels; optionally merge continuations">
+                                <i class="fas fa-sync"></i> Reevaluate Logs
+                            </button>
                             <button class="btn btn-outline-secondary btn-sm" onclick="editServer(${server.id})">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
@@ -280,6 +283,22 @@ async function createServer() {
     } catch (error) {
         console.error('Failed to create server:', error);
         showToast('Failed to create server. Please try again.', 'danger');
+    }
+}
+
+async function reevaluateServerLogs(serverId) {
+    try {
+        const proceed = window.confirm('Reevaluate levels for all logs on this server? Optionally merge SQL continuation lines?');
+        if (!proceed) return;
+        const merge = window.confirm('Merge SQL continuation lines (recommended for PostgreSQL STATEMENT lines)? Click OK to merge, Cancel to skip.');
+        const url = `/api/servers/${serverId}/logs/reevaluate?merge=${merge ? 'true' : 'false'}&dryRun=false`;
+        const result = await apiRequest(url, { method: 'POST' });
+        showToast(`Reevaluated ${result.scanned} logs. Updated ${result.updatedLevels}, merged ${result.merged}, removed ${result.deleted}.`);
+        // Refresh levels and counts
+        loadServerLogCount(serverId);
+    } catch (e) {
+        console.error('Failed to reevaluate logs', e);
+        showToast('Failed to reevaluate logs', 'danger');
     }
 }
 
