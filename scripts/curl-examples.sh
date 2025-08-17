@@ -11,9 +11,7 @@ curl -sS -X POST "$BASE_URL/api/logs" \
     "logLevel": "INFO",
     "source": "auth",
     "message": "User logged in",
-    "username": "alice",
-    "category": "security",
-    "status": "OPEN"
+    "category": "security"
   }' | jq .
 
 echo "\nList logs (filtered by source=auth)"
@@ -23,11 +21,18 @@ echo "\nExport CSV (first 100)"
 curl -sS -L "$BASE_URL/api/logs/export?format=csv&limit=100"
 
 echo "\nCreate a server"
-curl -sS -X POST "$BASE_URL/api/servers" -H 'Content-Type: application/json' \
-  -d '{"name":"server-a","hostname":"host1","description":"prod"}' | jq .
+SID=$(curl -sS -X POST "$BASE_URL/api/servers" -H 'Content-Type: application/json' \
+  -d '{"name":"server-a","hostname":"host1","description":"prod"}' | tee /dev/stderr | jq -r .id)
+echo "Server ID: ${SID}"
 
-echo "\nUpload single logfile to server 1"
-curl -sS -F "file=@/var/log/syslog" "$BASE_URL/api/servers/1/logs/upload" | jq .
+echo "\nUpload single logfile to server ${SID:-1}"
+curl -sS -F "file=@/var/log/syslog" "$BASE_URL/api/servers/${SID:-1}/logs/upload" | jq .
 
-echo "\nUpload multiple logfiles to server 1"
-curl -sS -F "files=@/var/log/syslog" -F "files=@/var/log/dpkg.log" "$BASE_URL/api/servers/1/logs/upload" | jq .
+echo "\nUpload multiple logfiles to server ${SID:-1}"
+curl -sS -F "files=@/var/log/syslog" -F "files=@/var/log/dpkg.log" "$BASE_URL/api/servers/${SID:-1}/logs/upload" | jq .
+
+echo "\nList logs for server ${SID:-1}"
+curl -sS "$BASE_URL/api/servers/${SID:-1}/logs?page=0&size=10" | jq .
+
+echo "\nReevaluate server levels (dry run)"
+curl -sS -X POST "$BASE_URL/api/servers/${SID:-1}/logs/reevaluate?merge=true&dryRun=true" | jq .

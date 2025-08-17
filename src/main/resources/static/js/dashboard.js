@@ -13,23 +13,31 @@ async function loadDashboardData() {
         // Load statistics
         const allLogs = await fetchLogs({ size: 1000 });
         const serversResponse = await apiRequest('/api/servers?size=1000');
-        
-        // Calculate statistics
-        const totalLogs = allLogs.totalElements || 0;
-        const totalServers = serversResponse.totalElements || 0;
-        const errorLogs = allLogs.content?.filter(log => 
-            log.logLevel === 'ERROR' || log.logLevel === 'FATAL'
-        ).length || 0;
-        
+
+        // Calculate statistics with robust Page parsing
+        const totalLogs = pageTotal(allLogs);
+        const totalServers = pageTotal(serversResponse);
+        const logsContent = pageContent(allLogs);
+
+        // Error logs count: include ERROR, FATAL, and HTTP 4xx/5xx
+        const errorLogs = (logsContent || []).filter(log => {
+            const lvl = (log.logLevel || '').toString();
+            const http = httpStatusInfo(lvl);
+            if (http) {
+                return http.category === '4xx' || http.category === '5xx';
+            }
+            const up = lvl.toUpperCase();
+            return up === 'ERROR' || up === 'FATAL';
+        }).length;
+
         // Update dashboard cards
         document.getElementById('totalLogs').textContent = totalLogs;
         document.getElementById('totalServers').textContent = totalServers;
         document.getElementById('errorLogs').textContent = errorLogs;
-        // Resolved card removed; no status tracking
-        
+
         // Update chart data
-        updateLogLevelChart(allLogs.content || []);
-        
+        updateLogLevelChart(logsContent || []);
+
     } catch (error) {
         console.error('Failed to load dashboard data:', error);
         showToast('Failed to load dashboard data', 'danger');

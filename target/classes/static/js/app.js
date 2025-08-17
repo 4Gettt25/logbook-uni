@@ -122,6 +122,22 @@ async function apiRequest(url, options = {}) {
     }
 }
 
+// Helpers for Spring Data Page responses (support multiple JSON shapes)
+function pageTotal(resp) {
+    if (!resp) return 0;
+    if (typeof resp.totalElements === 'number') return resp.totalElements;
+    if (resp.page && typeof resp.page.totalElements === 'number') return resp.page.totalElements;
+    if (Array.isArray(resp.content)) return resp.content.length;
+    return 0;
+}
+
+function pageContent(resp) {
+    if (!resp) return [];
+    if (Array.isArray(resp.content)) return resp.content;
+    // Fallback if content not present
+    return [];
+}
+
 async function fetchLogs(params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const url = `${API_BASE}${queryString ? '?' + queryString : ''}`;
