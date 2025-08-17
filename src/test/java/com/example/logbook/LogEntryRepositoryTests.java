@@ -38,7 +38,7 @@ class LogEntryRepositoryTests {
         repository.save(e2);
 
         Specification<LogEntry> spec = Specification
-                .where(LogEntrySpecifications.level("ERROR"))
+                .where(LogEntrySpecifications.levels(java.util.List.of("ERROR")))
                 .and(LogEntrySpecifications.source("api"));
         List<LogEntry> results = repository.findAll(spec);
         assertThat(results).hasSize(1);

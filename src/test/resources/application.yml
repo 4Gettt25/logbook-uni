@@ -17,4 +17,4 @@ spring:
 
 # Disable spring-dotenv during tests so SPRING_PROFILES_ACTIVE in .env does not flip to postgres
 dotenv:
-  enabled: true
+  enabled: false

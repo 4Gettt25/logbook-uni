@@ -4,6 +4,8 @@ import com.example.logbook.domain.Server;
 import com.example.logbook.repository.ServerRepository;
 import com.example.logbook.service.LogEntryService;
 import com.example.logbook.service.LogImportService;
+import com.example.logbook.repository.LogEntryRepository;
+import com.example.logbook.service.LogMaintenanceService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,12 @@ class ServerControllerCreateTests {
     @MockBean
     LogImportService importService;
 
+    @MockBean
+    LogEntryRepository logEntries;
+
+    @MockBean
+    LogMaintenanceService maintenance;
+
     @Test
     void createsServerAndReturns201() throws Exception {
         Server saved = new Server();
@@ -52,4 +60,3 @@ class ServerControllerCreateTests {
                 .andExpect(content().string(containsString("\"name\":\"web-1\"")));
     }
 }
-

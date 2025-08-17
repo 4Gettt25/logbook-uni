@@ -3,6 +3,9 @@ package com.example.logbook.web;
 import com.example.logbook.domain.Server;
 import com.example.logbook.repository.ServerRepository;
 import com.example.logbook.service.LogImportService;
+import com.example.logbook.service.LogEntryService;
+import com.example.logbook.repository.LogEntryRepository;
+import com.example.logbook.service.LogMaintenanceService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +35,15 @@ class ServerUploadControllerTests {
 
     @MockBean
     LogImportService imports;
+
+    @MockBean
+    LogEntryService logService;
+
+    @MockBean
+    LogEntryRepository logEntries;
+
+    @MockBean
+    LogMaintenanceService maintenance;
 
     @Test
     void uploadsSingleFile() throws Exception {
@@ -73,4 +85,3 @@ class ServerUploadControllerTests {
                 .andExpect(content().string(containsString("\"file\":\"b.log\"")));
     }
 }
-
