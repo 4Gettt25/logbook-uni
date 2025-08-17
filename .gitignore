@@ -29,3 +29,6 @@ replay_pid*
 
 # Local H2 database files
 data/
+
+# codex
+AGENTS.md
