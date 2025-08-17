@@ -62,6 +62,8 @@ Upload logs
 - Continuation lines: non-header lines are appended to previous entry; Postgres-like multi-line statements are handled.
 - Limits (configurable in `application.yml`): `max-file-size: 50MB`, `max-request-size: 200MB`.
 
+Tip: to test frontend logs just create a server and upload the nginx-fake.log file.
+
 UI routes
 - `/` Dashboard (cards + recent logs + level chart)
 - `/logs` Search & browse logs
@@ -87,6 +89,4 @@ Testing the API
 - Postman: import `postman/Logbook.postman_collection.json` and set base to `http://localhost:8080`.
 
 Troubleshooting
-- “Broken pipe” during page load: now handled by `RestExceptionHandler`; safe to ignore.
-- Delete server fails with transaction error: fixed; server removal runs inside a transaction and deletes associated logs first.
 - 413 on upload: increase `spring.servlet.multipart.max-file-size` / `max-request-size` in `application.yml`.
