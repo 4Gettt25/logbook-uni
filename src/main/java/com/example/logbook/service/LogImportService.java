@@ -1,0 +1,172 @@
+package com.example.logbook.service;
+
+import com.example.logbook.domain.LogEntry;
+import com.example.logbook.domain.Server;
+import com.example.logbook.repository.LogEntryRepository;
+import com.example.logbook.repository.ServerRepository;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class LogImportService {
+    private static final int MAX_MESSAGE = 4000; // legacy constant (no longer enforced)
+    private static final Pattern NGINX_LINE = Pattern.compile(
+            "^(?<ip>\\S+)\\s+\\S+\\s+\\S+\\s+\\[(?<ts>\\d{2}/[A-Za-z]{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2}\\s[+-]\\d{4})]\\s+\"(?<method>GET|POST|PUT|DELETE|HEAD|PATCH|OPTIONS)\\s+[^\"]+\\s+HTTP/\\d\\.\\d\"\\s+(?<status>\\d{3})\\b.*$",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern ISO_LINE = Pattern.compile(
+            "^(?<ts>\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z?)\\s+(?<level>[A-Z]+)\\s+(?<source>[\\w.\\-]+)\\s*-?\\s*(?<msg>.*)$"
+    );
+    private static final Pattern LOG4J_LINE = Pattern.compile(
+            "^(?<ts>\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}(?:,\\d{3})?)\\s+(?<level>[A-Z]+)\\s+(?<source>[\\w.\\-]+).*?-\\s*(?<msg>.*)$"
+    );
+    private static final Pattern SYSLOG_LINE = Pattern.compile(
+            "^(?<mon>Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\s+(?<day>\\d{1,2})\\s+(?<time>\\d{2}:\\d{2}:\\d{2})\\s+(?<host>\\S+)\\s+(?<source>[\\w.\\-]+)(?:\\[\\d+\\])?:\\s*(?<msg>.*)$"
+    );
+
+    private final LogEntryRepository repository;
+    private final SessionFactory sessionFactory;
+
+    public LogImportService(LogEntryRepository repository, ServerRepository serverRepository) {
+        this.repository = repository;
+        this.sessionFactory = repository.getSessionFactory();
+    }
+
+    public int importText(byte[] bytes, Server server) {
+        Transaction tx = sessionFactory.getCurrentSession().beginTransaction();
+        try {
+            String content = new String(bytes, StandardCharsets.UTF_8);
+            String[] lines = content.split("\r?\n");
+            List<LogEntry> batch = new ArrayList<>();
+            LogEntry last = null;
+            for (String raw : lines) {
+                String line = raw.strip();
+                if (line.isEmpty()) continue;
+                if (last != null && isContinuationLine(line)) {
+                    String msg = last.getMessage();
+                    if (msg == null || msg.isEmpty()) msg = raw;
+                    else msg = msg + "\n" + raw;
+                    last.setMessage(msg);
+                    continue;
+                }
+                try {
+                    last = parseLine(line, server);
+                    batch.add(last);
+                } catch (Exception e) {
+                    last = null;
+                }
+            }
+            if (!batch.isEmpty()) {
+                for (LogEntry entry : batch) {
+                    repository.save(entry);
+                }
+            }
+            tx.commit();
+            return batch.size();
+        } catch (Exception e) {
+            tx.rollback();
+            throw e;
+        }
+    }
+
+    private boolean isContinuationLine(String line) {
+        // New entry headers we know:
+        if (ISO_LINE.matcher(line).matches()) return false;
+        if (LOG4J_LINE.matcher(line).matches()) return false;
+        if (SYSLOG_LINE.matcher(line).matches()) return false;
+        if (NGINX_LINE.matcher(line).matches()) return false;
+        // Generic Postgres line starting with timestamp
+        if (line.matches("^\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}.*")) return false;
+        return true; // otherwise treat as continuation of previous message
+    }
+
+    private LogEntry parseLine(String line, Server server) {
+        Instant ts = Instant.now();
+        String level = "INFO";
+        String source = "upload";
+        String msg = line;
+
+        Matcher m = ISO_LINE.matcher(line);
+        if (m.matches()) {
+            String tsStr = m.group("ts");
+            try { ts = Instant.parse(tsStr.endsWith("Z") ? tsStr : tsStr + "Z"); } catch (DateTimeParseException ignored) {}
+            String lv = m.group("level");
+            if (lv != null && !lv.isBlank()) level = lv.toUpperCase();
+            source = m.group("source");
+            msg = m.group("msg");
+        } else if ((m = NGINX_LINE.matcher(line)).matches()) {
+            String tsStr = m.group("ts");
+            try {
+                java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z", java.util.Locale.ENGLISH).withZone(java.time.ZoneId.systemDefault());
+                ts = java.time.ZonedDateTime.parse(tsStr, fmt).toInstant();
+            } catch (Exception ignored) {}
+            level = m.group("status");
+            source = m.group("ip");
+            msg = line;
+        } else if ((m = LOG4J_LINE.matcher(line)).matches()) {
+            String tsStr = m.group("ts");
+            try { ts = parseLog4jTs(tsStr); } catch (Exception ignored) {}
+            String lv = m.group("level");
+            if (lv != null && !lv.isBlank()) level = lv.toUpperCase();
+            source = m.group("source");
+            msg = m.group("msg");
+        } else if ((m = SYSLOG_LINE.matcher(line)).matches()) {
+            try { ts = parseSyslogTs(m.group("mon"), m.group("day"), m.group("time")); } catch (Exception ignored) {}
+            source = m.group("source");
+            msg = m.group("msg");
+            level = "INFO";
+        }
+
+        // Heuristics for Postgres and generic HTTP lines
+        if (level == null || level.isBlank() || "INFO".equals(level)) {
+            Matcher pg = Pattern.compile("\\b(ERROR|FATAL|PANIC|WARNING|WARN|NOTICE|INFO|LOG|DEBUG\\d?|STATEMENT|DETAIL|HINT|CONTEXT)\\s*:", Pattern.CASE_INSENSITIVE).matcher(line);
+            if (pg.find()) {
+                String tok = pg.group(1).toUpperCase();
+                if (tok.startsWith("DEBUG")) tok = "DEBUG";
+                if (tok.equals("WARNING")) tok = "WARN";
+                if (tok.equals("STATEMENT") || tok.equals("DETAIL") || tok.equals("HINT") || tok.equals("CONTEXT")) tok = "LOG";
+                level = tok;
+            }
+        }
+        if (level == null || level.isBlank() || "INFO".equals(level)) {
+            Matcher mng = Pattern.compile("\"(?:GET|POST|PUT|DELETE|HEAD|PATCH|OPTIONS)\\s+[^\"]+\\s+HTTP/\\d\\.\\d\"\\s+(\\d{3})\\b", Pattern.CASE_INSENSITIVE).matcher(line);
+            if (mng.find()) level = mng.group(1);
+        }
+
+        if (source.length() > 255) source = source.substring(0, 255);
+
+        LogEntry e = new LogEntry();
+        e.setTimestamp(ts);
+        e.setLogLevel(level);
+        e.setSource(source);
+        e.setMessage(msg);
+        e.setServer(server);
+        return e;
+    }
+
+    private Instant parseLog4jTs(String ts) {
+        // supports "yyyy-MM-dd HH:mm:ss" and "yyyy-MM-dd HH:mm:ss,SSS" (UTC)
+        java.time.format.DateTimeFormatter f1 = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(java.time.ZoneOffset.UTC);
+        java.time.format.DateTimeFormatter f2 = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS").withZone(java.time.ZoneOffset.UTC);
+        try {
+            return java.time.LocalDateTime.parse(ts, f2).toInstant(java.time.ZoneOffset.UTC);
+        } catch (Exception ignore) {
+            return java.time.LocalDateTime.parse(ts, f1).toInstant(java.time.ZoneOffset.UTC);
+        }
+    }
+
+    private Instant parseSyslogTs(String mon, String day, String time) {
+        int year = java.time.ZonedDateTime.now().getYear();
+        String ts = year + " " + mon + " " + day + " " + time;
+        java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy MMM d HH:mm:ss");
+        return java.time.LocalDateTime.parse(ts, fmt).atZone(java.time.ZoneId.systemDefault()).toInstant();
+    }
+}

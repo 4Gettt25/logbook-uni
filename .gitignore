@@ -22,3 +22,25 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Local environment files
+.env
+!.env.example
+
+# Local H2 database files
+data/
+
+# Maven/Gradle build output
+target/
+build/
+
+# IDE/editor config
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS files
+.DS_Store

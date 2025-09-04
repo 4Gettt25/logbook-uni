@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Logs - Logbook</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="fas fa-book"></i> Logbook
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/logs}">
+                            <i class="fas fa-list"></i> View Logs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/servers}">
+                            <i class="fas fa-server"></i> Servers
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/upload}">
+                            <i class="fas fa-upload"></i> Upload Logs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/create}">
+                            <i class="fas fa-plus"></i> Create Log
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-upload"></i> Upload Log Files</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="serverId" class="form-label">Target Server <span class="text-danger">*</span></label>
+                                <select id="serverId" class="form-select" required>
+                                    <option value="">Select a server...</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a server.</div>
+                                <div class="form-text">
+                                    Log entries will be associated with this server. 
+                                    <a href="/servers" target="_blank">Manage servers</a>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="logFiles" class="form-label">Log Files <span class="text-danger">*</span></label>
+                                <input type="file" id="logFiles" class="form-control" multiple 
+                                       accept=".log,.txt,.out" required>
+                                <div class="invalid-feedback">Please select at least one log file.</div>
+                                <div class="form-text">
+                                    Select one or more log files. Supported formats: .log, .txt, .out
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="parseFormat" checked>
+                                    <label class="form-check-label" for="parseFormat">
+                                        Auto-detect log format
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    Automatically parse timestamps and log levels from common formats
+                                </div>
+                            </div>
+
+                            <!-- File Preview -->
+                            <div id="filePreview" class="mb-3" style="display: none;">
+                                <h6>Selected Files:</h6>
+                                <div id="fileList" class="list-group"></div>
+                            </div>
+
+                            <!-- Upload Progress -->
+                            <div id="uploadProgress" class="mb-3" style="display: none;">
+                                <div class="progress">
+                                    <div id="progressBar" class="progress-bar" role="progressbar" 
+                                         style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                        0%
+                                    </div>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <small id="progressText">Preparing upload...</small>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-secondary me-md-2" onclick="resetUploadForm()">
+                                    <i class="fas fa-undo"></i> Reset
+                                </button>
+                                <button type="submit" class="btn btn-success" id="uploadBtn">
+                                    <i class="fas fa-upload"></i> Upload Files
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Upload Results -->
+                <div id="uploadResults" class="card mt-4" style="display: none;">
+                    <div class="card-header bg-success text-white">
+                        <h5><i class="fas fa-check-circle"></i> Upload Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="resultsContent"></div>
+                        <div class="mt-3">
+                            <a href="/logs" class="btn btn-primary">
+                                <i class="fas fa-list"></i> View Uploaded Logs
+                            </a>
+                            <button class="btn btn-outline-primary" onclick="uploadAnother()">
+                                <i class="fas fa-upload"></i> Upload More Files
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Supported Formats Info -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-info-circle"></i> Supported Log Formats</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6>ISO 8601 Format</h6>
+                                <code class="d-block">2024-01-15T10:30:45Z INFO com.example.Service - Message</code>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Log4j Format</h6>
+                                <code class="d-block">2024-01-15 10:30:45,123 INFO com.example.Service - Message</code>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Syslog Format</h6>
+                                <code class="d-block">Jan 15 10:30:45 hostname service: Message</code>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                Files that don't match these formats will be imported as plain text with INFO level.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/upload.js}"></script>
+</body>
+</html>
