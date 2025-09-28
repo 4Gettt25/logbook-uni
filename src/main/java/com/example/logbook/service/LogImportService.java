@@ -4,8 +4,10 @@ import com.example.logbook.domain.LogEntry;
 import com.example.logbook.domain.Server;
 import com.example.logbook.repository.LogEntryRepository;
 import com.example.logbook.repository.ServerRepository;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.context.internal.ManagedSessionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.function.Function;
 
 public class LogImportService {
     private static final int MAX_MESSAGE = 4000; // legacy constant (no longer enforced)
@@ -41,10 +44,9 @@ public class LogImportService {
     }
 
     public int importText(byte[] bytes, Server server) {
-        Transaction tx = sessionFactory.getCurrentSession().beginTransaction();
-        try {
+        return execute(session -> {
             String content = new String(bytes, StandardCharsets.UTF_8);
-            String[] lines = content.split("\r?\n");
+            String[] lines = content.split("\\r?\\n");
             List<LogEntry> batch = new ArrayList<>();
             LogEntry last = null;
             for (String raw : lines) {
@@ -53,7 +55,7 @@ public class LogImportService {
                 if (last != null && isContinuationLine(line)) {
                     String msg = last.getMessage();
                     if (msg == null || msg.isEmpty()) msg = raw;
-                    else msg = msg + "\n" + raw;
+                    else msg = msg + "\\n" + raw;
                     last.setMessage(msg);
                     continue;
                 }
@@ -69,23 +71,17 @@ public class LogImportService {
                     repository.save(entry);
                 }
             }
-            tx.commit();
             return batch.size();
-        } catch (Exception e) {
-            tx.rollback();
-            throw e;
-        }
+        });
     }
 
     private boolean isContinuationLine(String line) {
-        // New entry headers we know:
         if (ISO_LINE.matcher(line).matches()) return false;
         if (LOG4J_LINE.matcher(line).matches()) return false;
         if (SYSLOG_LINE.matcher(line).matches()) return false;
         if (NGINX_LINE.matcher(line).matches()) return false;
-        // Generic Postgres line starting with timestamp
         if (line.matches("^\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}.*")) return false;
-        return true; // otherwise treat as continuation of previous message
+        return true;
     }
 
     private LogEntry parseLine(String line, Server server) {
@@ -125,7 +121,6 @@ public class LogImportService {
             level = "INFO";
         }
 
-        // Heuristics for Postgres and generic HTTP lines
         if (level == null || level.isBlank() || "INFO".equals(level)) {
             Matcher pg = Pattern.compile("\\b(ERROR|FATAL|PANIC|WARNING|WARN|NOTICE|INFO|LOG|DEBUG\\d?|STATEMENT|DETAIL|HINT|CONTEXT)\\s*:", Pattern.CASE_INSENSITIVE).matcher(line);
             if (pg.find()) {
@@ -153,7 +148,6 @@ public class LogImportService {
     }
 
     private Instant parseLog4jTs(String ts) {
-        // supports "yyyy-MM-dd HH:mm:ss" and "yyyy-MM-dd HH:mm:ss,SSS" (UTC)
         java.time.format.DateTimeFormatter f1 = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(java.time.ZoneOffset.UTC);
         java.time.format.DateTimeFormatter f2 = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS").withZone(java.time.ZoneOffset.UTC);
         try {
@@ -168,5 +162,22 @@ public class LogImportService {
         String ts = year + " " + mon + " " + day + " " + time;
         java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy MMM d HH:mm:ss");
         return java.time.LocalDateTime.parse(ts, fmt).atZone(java.time.ZoneId.systemDefault()).toInstant();
+    }
+
+    private <T> T execute(Function<Session, T> work) {
+        Session session = sessionFactory.openSession();
+        ManagedSessionContext.bind(session);
+        Transaction tx = session.beginTransaction();
+        try {
+            T result = work.apply(session);
+            tx.commit();
+            return result;
+        } catch (RuntimeException e) {
+            tx.rollback();
+            throw e;
+        } finally {
+            ManagedSessionContext.unbind(sessionFactory);
+            session.close();
+        }
     }
 }

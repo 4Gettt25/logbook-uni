@@ -2,11 +2,14 @@ package com.example.logbook.service;
 
 import com.example.logbook.domain.LogEntry;
 import com.example.logbook.repository.LogEntryRepository;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.context.internal.ManagedSessionContext;
 
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.function.Function;
 
 public class LogMaintenanceService {
 
@@ -21,8 +24,7 @@ public class LogMaintenanceService {
     public record ReevalResult(long scanned, long updatedLevels, long merged, long deleted, long unchanged) {}
 
     public ReevalResult reevaluateServer(Long serverId, boolean mergeContinuations, boolean dryRun) {
-        Transaction tx = sessionFactory.getCurrentSession().beginTransaction();
-        try {
+        return execute(session -> {
             List<LogEntry> items = repository.findByServerIdOrderByTimestampAscIdAsc(serverId);
             long scanned = 0, updated = 0, merged = 0, deleted = 0, unchanged = 0;
             List<LogEntry> toSave = new ArrayList<>();
@@ -36,13 +38,10 @@ public class LogMaintenanceService {
                 boolean levelChanged = newLevel != null && !newLevel.equals(e.getLogLevel());
 
                 if (mergeContinuations && prev != null && looksLikeContinuation(prev, e)) {
-                    // Append current message to previous
                     String combined = nvl(prev.getMessage());
                     if (!combined.isEmpty()) combined += "\n";
                     combined += originalMessage;
-                    // no truncation; DB column is TEXT
                     prev.setMessage(combined);
-                    // Recompute level for prev (may still be LOG)
                     String recomputed = detectLevel(combined);
                     if (recomputed != null && !recomputed.equals(prev.getLogLevel())) {
                         prev.setLogLevel(recomputed);
@@ -78,13 +77,9 @@ public class LogMaintenanceService {
                         repository.deleteById(id);
                     }
                 }
-            }            ReevalResult result = new ReevalResult(scanned, updated, merged, deleted, unchanged);
-            tx.commit();
-            return result;
-        } catch (Exception e) {
-            tx.rollback();
-            throw e;
-        }
+            }
+            return new ReevalResult(scanned, updated, merged, deleted, unchanged);
+        });
     }
 
     private static final Pattern PG_TOKEN = Pattern.compile(
@@ -115,13 +110,28 @@ public class LogMaintenanceService {
     private boolean looksLikeContinuation(LogEntry prev, LogEntry curr) {
         String pm = nvl(prev.getMessage());
         String cm = nvl(curr.getMessage());
-        // Do not merge if current starts with severity token
         if (PG_TOKEN.matcher(cm).find()) return false;
-        // Consider merge when previous contains statement-like context and current looks like SQL or ends with ';'
         boolean prevHasContext = pm.contains("STATEMENT:") || pm.contains("DETAIL:") || pm.contains("HINT:") || pm.contains("CONTEXT:") || pm.contains("ERROR:");
         boolean currLooksSQL = cm.matches("(?is)^\\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|WITH|BEGIN|COMMIT|ROLLBACK|EXPLAIN|ANALYZE)\\b.*") || cm.trim().endsWith(";");
         return prevHasContext && currLooksSQL;
     }
 
     private static String nvl(String s) { return s == null ? "" : s; }
+
+    private <T> T execute(Function<Session, T> work) {
+        Session session = sessionFactory.openSession();
+        ManagedSessionContext.bind(session);
+        Transaction tx = session.beginTransaction();
+        try {
+            T result = work.apply(session);
+            tx.commit();
+            return result;
+        } catch (RuntimeException e) {
+            tx.rollback();
+            throw e;
+        } finally {
+            ManagedSessionContext.unbind(sessionFactory);
+            session.close();
+        }
+    }
 }

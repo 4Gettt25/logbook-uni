@@ -123,7 +123,7 @@ public class LogEntryController {
                 
                 ctx.header("Content-Disposition", "attachment; filename=logs.json")
                    .contentType("application/json")
-                   .result(json.getBytes(StandardCharsets.UTF_8));
+                   .result(json);
             } else {
                 // default CSV
                 String header = "id,timestamp,level,source,message,category\n";
@@ -139,7 +139,7 @@ public class LogEntryController {
                 
                 ctx.header("Content-Disposition", "attachment; filename=logs.csv")
                    .contentType("text/csv")
-                   .result(csv.getBytes(StandardCharsets.UTF_8));
+                   .result(csv);
             }
         } catch (Exception e) {
             ctx.status(500).json(Map.of("error", e.getMessage()));
