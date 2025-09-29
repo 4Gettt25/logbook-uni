@@ -2,18 +2,18 @@ package com.example.logbook.web;
 
 import com.example.logbook.domain.LogEntry;
 import com.example.logbook.domain.Server;
-import com.example.logbook.repository.ServerRepository;
+import com.example.logbook.repository.LogEntryRepository;
 import com.example.logbook.service.LogEntryService;
 import com.example.logbook.service.LogImportService;
-import com.example.logbook.repository.LogEntryRepository;
 import com.example.logbook.service.LogMaintenanceService;
+import com.example.logbook.service.ServerService;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.UploadedFile;
 import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
-import jakarta.validation.Validation;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -25,24 +25,24 @@ import java.util.stream.Collectors;
 
 public class ServerController {
 
-    private final ServerRepository servers;
+    private static final String SERVER_SORT_PATTERN = "^(id|name|hostname|createdAt)$";
+
+    private final ServerService servers;
     private final LogEntryService logService;
     private final LogImportService importService;
-    private final LogEntryRepository logEntries;
     private final LogMaintenanceService maintenance;
     private final Validator validator;
 
-    public ServerController(ServerRepository servers, LogEntryService logService, LogImportService importService, 
-                           LogEntryRepository logEntries, LogMaintenanceService maintenance) {
+    public ServerController(ServerService servers, LogEntryService logService, LogImportService importService,
+                            LogMaintenanceService maintenance) {
         this.servers = servers;
         this.logService = logService;
         this.importService = importService;
-        this.logEntries = logEntries;
         this.maintenance = maintenance;
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         this.validator = factory.getValidator();
     }
-    
+
     public void registerRoutes(Javalin app) {
         app.get("/api/servers", this::list);
         app.get("/api/servers/{id}", this::get);
@@ -58,8 +58,13 @@ public class ServerController {
         try {
             int page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(0);
             int size = ctx.queryParamAsClass("size", Integer.class).getOrDefault(20);
-            
-            LogEntryRepository.PageResult<Server> result = servers.findAll(page, size, "name", false);
+            String sort = ctx.queryParam("sort");
+            if (sort == null || sort.isBlank() || !sort.matches(SERVER_SORT_PATTERN)) {
+                sort = "name";
+            }
+            boolean desc = ctx.queryParamAsClass("desc", Boolean.class).getOrDefault(false);
+
+            LogEntryRepository.PageResult<Server> result = servers.list(page, size, sort, desc);
             ctx.json(result);
         } catch (Exception e) {
             ctx.status(500).json(Map.of("error", e.getMessage()));
@@ -69,11 +74,12 @@ public class ServerController {
     private void get(Context ctx) {
         try {
             long id = ctx.pathParamAsClass("id", Long.class).get();
-            Server server = servers.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Server not found: " + id));
+            Server server = servers.get(id);
             ctx.json(server);
-        } catch (Exception e) {
+        } catch (NoSuchElementException e) {
             ctx.status(404).json(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage()));
         }
     }
 
@@ -81,27 +87,26 @@ public class ServerController {
         try {
             Server server = ctx.bodyAsClass(Server.class);
             validateServer(server);
-            Server saved = servers.saveAndFlush(server);
+            Server saved = servers.create(server);
             ctx.status(201)
                .header("Location", "/api/servers/" + saved.getId())
                .json(saved);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             ctx.status(400).json(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage()));
         }
     }
 
     private void delete(Context ctx) {
         try {
             long id = ctx.pathParamAsClass("id", Long.class).get();
-            if (!servers.existsById(id)) {
-                throw new NoSuchElementException("Server not found: " + id);
-            }
-            // Remove associated logs first to satisfy FK constraints
-            logEntries.deleteByServerId(id);
-            servers.deleteById(id);
+            servers.delete(id);
             ctx.status(204);
-        } catch (Exception e) {
+        } catch (NoSuchElementException e) {
             ctx.status(404).json(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage()));
         }
     }
 
@@ -116,25 +121,25 @@ public class ServerController {
             int page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(0);
             int size = ctx.queryParamAsClass("size", Integer.class).getOrDefault(20);
 
-            // ensure server exists
-            servers.findById(id).orElseThrow(() -> new NoSuchElementException("Server not found: " + id));
+            servers.get(id); // ensure server exists
             LogEntryRepository.PageResult<LogEntry> result = logService.searchByServer(id, from, to, levels, source, query, page, size);
             ctx.json(result);
-        } catch (Exception e) {
+        } catch (NoSuchElementException e) {
             ctx.status(404).json(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage()));
         }
     }
 
     private void availableLevels(Context ctx) {
         try {
             long id = ctx.pathParamAsClass("id", Long.class).get();
-            // ensure server exists
-            servers.findById(id).orElseThrow(() -> new NoSuchElementException("Server not found: " + id));
-            List<String> levels = logEntries.findDistinctLevelsByServerId(id);
-            levels.sort(String.CASE_INSENSITIVE_ORDER);
+            List<String> levels = servers.listLogLevels(id);
             ctx.json(levels);
-        } catch (Exception e) {
+        } catch (NoSuchElementException e) {
             ctx.status(404).json(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage()));
         }
     }
 
@@ -143,33 +148,31 @@ public class ServerController {
             long id = ctx.pathParamAsClass("id", Long.class).get();
             boolean merge = ctx.queryParamAsClass("merge", Boolean.class).getOrDefault(false);
             boolean dryRun = ctx.queryParamAsClass("dryRun", Boolean.class).getOrDefault(false);
-            
-            // ensure server exists
-            servers.findById(id).orElseThrow(() -> new NoSuchElementException("Server not found: " + id));
+
+            servers.get(id); // ensure server exists
             var result = maintenance.reevaluateServer(id, merge, dryRun);
             ctx.json(result);
-        } catch (Exception e) {
+        } catch (NoSuchElementException e) {
             ctx.status(404).json(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("error", e.getMessage()));
         }
     }
 
     private void upload(Context ctx) {
         try {
             long id = ctx.pathParamAsClass("id", Long.class).get();
-            Server server = servers.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Server not found: " + id));
-            
+            Server server = servers.get(id);
+
             List<UploadFileResult> results = new ArrayList<>();
-            
-            // Handle single file upload
+
             UploadedFile file = ctx.uploadedFile("file");
             if (file != null) {
                 byte[] content = file.content().readAllBytes();
                 int count = importService.importText(content, server);
                 results.add(new UploadFileResult(file.filename(), count));
             }
-            
-            // Handle multiple file uploads
+
             List<UploadedFile> files = ctx.uploadedFiles("files");
             if (files != null) {
                 for (UploadedFile f : files) {
@@ -180,14 +183,16 @@ public class ServerController {
                     }
                 }
             }
-            
+
             int total = results.stream().mapToInt(UploadFileResult::imported).sum();
             ctx.json(new UploadResults(results, total));
+        } catch (NoSuchElementException e) {
+            ctx.status(404).json(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             ctx.status(400).json(Map.of("error", e.getMessage()));
         }
     }
-    
+
     private void validateServer(Server server) {
         Set<ConstraintViolation<Server>> violations = validator.validate(server);
         if (!violations.isEmpty()) {
@@ -197,7 +202,7 @@ public class ServerController {
             throw new IllegalArgumentException("Validation failed: " + errors);
         }
     }
-    
+
     private Instant parseInstant(String value) {
         if (value == null || value.trim().isEmpty()) {
             return null;
@@ -207,6 +212,8 @@ public class ServerController {
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid timestamp format: " + value);
         }
-    }    public record UploadFileResult(String file, int imported) {}
+    }
+
+    public record UploadFileResult(String file, int imported) {}
     public record UploadResults(List<UploadFileResult> results, int total) {}
 }

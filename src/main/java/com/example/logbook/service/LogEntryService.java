@@ -2,13 +2,13 @@ package com.example.logbook.service;
 
 import com.example.logbook.domain.LogEntry;
 import com.example.logbook.repository.LogEntryRepository;
-import com.example.logbook.repository.ServerRepository;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -18,44 +18,46 @@ public class LogEntryService {
     private final LogEntryRepository repository;
     private final SessionFactory sessionFactory;
 
-    public LogEntryService(LogEntryRepository repository, ServerRepository serverRepository) {
+    public LogEntryService(LogEntryRepository repository) {
         this.repository = repository;
         this.sessionFactory = repository.getSessionFactory();
     }
 
     public LogEntryRepository.PageResult<LogEntry> search(Instant from,
-                                 java.util.List<String> levels,
-                                 String source,
-                                 String query,
-                                 int page, int size) {
-        return execute(session -> repository.findWithFilters(
-            from, null, levels, source, query, null, page, size, "timestamp", true));
+                                                          List<String> levels,
+                                                          String source,
+                                                          String query,
+                                                          int page,
+                                                          int size) {
+        return search(from, null, levels, source, query, page, size);
     }
 
     public LogEntryRepository.PageResult<LogEntry> search(Instant from,
-                                 Instant to,
-                                 java.util.List<String> levels,
-                                 String source,
-                                 String query,
-                                 int page, int size) {
+                                                          Instant to,
+                                                          List<String> levels,
+                                                          String source,
+                                                          String query,
+                                                          int page,
+                                                          int size) {
         return execute(session -> repository.findWithFilters(
-            from, to, levels, source, query, null, page, size, "timestamp", true));
+                from, to, levels, source, query, null, page, size, "timestamp", true));
     }
 
     public LogEntryRepository.PageResult<LogEntry> searchByServer(Long serverId,
-                                         Instant from,
-                                         Instant to,
-                                         java.util.List<String> levels,
-                                         String source,
-                                         String query,
-                                         int page, int size) {
+                                                                 Instant from,
+                                                                 Instant to,
+                                                                 List<String> levels,
+                                                                 String source,
+                                                                 String query,
+                                                                 int page,
+                                                                 int size) {
         return execute(session -> repository.findWithFilters(
-            from, to, levels, source, query, serverId, page, size, "timestamp", true));
+                from, to, levels, source, query, serverId, page, size, "timestamp", true));
     }
 
     public LogEntry get(long id) {
         return execute(session -> repository.findById(id)
-            .orElseThrow(() -> new NoSuchElementException("LogEntry not found: " + id)));
+                .orElseThrow(() -> new NoSuchElementException("LogEntry not found: " + id)));
     }
 
     public LogEntry create(LogEntry entry) {
@@ -70,7 +72,7 @@ public class LogEntryService {
     public LogEntry update(long id, LogEntry updated) {
         return execute(session -> {
             LogEntry existing = repository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("LogEntry not found: " + id));
+                    .orElseThrow(() -> new NoSuchElementException("LogEntry not found: " + id));
             existing.setTimestamp(updated.getTimestamp() != null ? updated.getTimestamp() : existing.getTimestamp());
             existing.setLogLevel(updated.getLogLevel() != null ? updated.getLogLevel() : existing.getLogLevel());
             existing.setSource(updated.getSource() != null ? updated.getSource() : existing.getSource());
