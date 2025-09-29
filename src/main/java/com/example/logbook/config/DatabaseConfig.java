@@ -37,7 +37,7 @@ public class DatabaseConfig {
     private static final Path H2_TRACE_FILE = Paths.get("data", "logbook.trace.db");
 
     private final Dotenv dotenv;
-    private final boolean usePostgres;
+    private boolean usePostgres;
 
     public DatabaseConfig(Dotenv dotenv) {
         this.dotenv = Objects.requireNonNull(dotenv, "dotenv");
@@ -45,8 +45,16 @@ public class DatabaseConfig {
 
         if (usePostgres) {
             System.out.println("[database] Using PostgreSQL connection settings");
-            ensurePostgresDatabaseExists();
-        } else {
+            try {
+                ensurePostgresDatabaseExists();
+            } catch (IllegalStateException ex) {
+                System.err.println("[database] Unable to reach configured PostgreSQL instance: " + ex.getMessage());
+                System.err.println("[database] Falling back to embedded H2 database.");
+                this.usePostgres = false;
+            }
+        }
+
+        if (!usePostgres) {
             System.out.println("[database] Using embedded H2 database");
             ensureH2FilesAreAvailable();
         }
