@@ -25,6 +25,7 @@ spring:
       enabled: true
       path: /h2-console
   flyway:
+    enabled: false
     baseline-on-migrate: true
   servlet:
     multipart:
@@ -44,6 +45,9 @@ spring:
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
   jpa:
     hibernate:
       ddl-auto: update

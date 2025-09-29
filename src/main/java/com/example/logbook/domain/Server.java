@@ -25,7 +25,7 @@ public class Server {
     @Size(max = 1000)
     private String description;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
     public Long getId() { return id; }
